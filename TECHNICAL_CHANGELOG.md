@@ -2,7 +2,7 @@
 
 ## 0.1.1
 - `config.js`: `APP_NAME`, `LOGO_URL`. `ui.js`: `appName()`, `logoEl()` (img con fallback a SVG en `error`), `refreshButton()`.
-- Jugador: `mode` (picker/confirm/form) controla el refresco automático de 60 s; se limpia con `onLeave`.
+- Sin polling: solo refresco manual (menos llamadas a Apps Script). Logo: original negro/blanco convertido a alfa (luminancia invertida) y teñido de dorado #e0b14a, 512x512.
 - Presentación: `presentView(eventId, startIndex)`; `reload()` hace `runLeave()` y vuelve a montar conservando el índice.
 - Pruebas e2e: +2 (marca/refrescos, fallback de logo). Total e2e 15.
 

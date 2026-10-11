@@ -3,5 +3,5 @@ window.DS_CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbziQ05_vDVf1-AIjB5KO3-IbY8r7OX8QF_PHbaDz6C-gdRiV7s0xeQWBeiUrQphUiMZ/exec',
   APP_NAME: 'CAPY BURST Deck Showcase',
   // Put the team logo in assets/ and set its file name here (PNG, SVG or WEBP, square or wide).
-  LOGO_URL: 'assets/logo.svg'
+  LOGO_URL: 'assets/logo.png'
 };

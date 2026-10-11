@@ -1,4 +1,4 @@
-import { h, mount, refreshButton, onLeave, spinner, errorBanner, toast, formatDate, plural, ordinal, icon, COLORS, setBusy } from '../ui.js';
+import { h, mount, refreshButton, spinner, errorBanner, toast, formatDate, plural, ordinal, icon, COLORS, setBusy } from '../ui.js';
 import { call } from '../api.js';
 import { getSecret } from '../session.js';
 import { parseDeckText, checkDeckLink, LIMITS } from '../../shared/parsers.js';
@@ -42,19 +42,13 @@ export async function playerView(eventId) {
       h('p', { class: 'hint', text: 'This page and all lists are deleted on ' + formatDate(data.event.expiresAt.slice(0, 10)) + '.' }));
   }
 
-  // Refresh without touching the browser. Never while the player is filling the form (it would wipe the text).
-  let mode = 'picker';
+  // Manual refresh only (no polling, to keep the number of Apps Script calls low).
   async function refresh() {
     await load();
     root.replaceChildren(...draw());
   }
-  const auto = setInterval(() => {
-    if (mode === 'picker' && !document.hidden) refresh().catch(() => {});
-  }, 60000);
-  onLeave(() => clearInterval(auto));
 
   function draw() {
-    mode = data.me && !(data.me.deck && data.me.locked) ? 'form' : 'picker';
     if (data.me) return drawMine();
     return drawPicker();
   }
@@ -62,11 +56,7 @@ export async function playerView(eventId) {
   // ---------------------------------------------------------------- name picker
   function drawPicker(picked) {
     const ev = data.event;
-    if (picked) {
-      mode = 'confirm';
-      return drawConfirm(picked);
-    }
-    mode = 'picker';
+    if (picked) return drawConfirm(picked);
     const rows = data.players.map((p) => {
       let right;
       if (p.state === 'open' && ev.status === 'open') {

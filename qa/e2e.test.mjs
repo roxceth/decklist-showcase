@@ -536,8 +536,8 @@ test('branding and refresh buttons: name, logo fallback, dashboard / edit / play
   const ev = srv.gas.post({ action: 'createEvent', token: t, name: 'Refresh Cup', datePlayed: '2026-10-11', expireDays: 14, resultsText: 'Uno\nDos\nTres' }).data.eventId;
   const page = await newPage();
   await login(page);
-  assert.equal(await page.title(), 'CAPY BURST Deck Showcase');
-  assert.match(await page.locator('.brand span').textContent(), /CAPY BURST DECK SHOWCASE/);
+  assert.equal(await page.title(), 'CapyBurst Decklist Showcase');
+  assert.match(await page.locator('.brand span').textContent(), /CAPYBURST DECKLIST SHOWCASE/);
   assert.equal(await page.locator('.brand img.brand-logo').count(), 1);
   await shot(page, '12-branding-desktop');
   // dashboard picks up an event created elsewhere
@@ -579,7 +579,7 @@ test('branding and refresh buttons: name, logo fallback, dashboard / edit / play
   await page.keyboard.press('ArrowRight');
   await page.getByRole('button', { name: 'Reload (R)' }).click();
   await page.locator('.count', { hasText: '2 / 2' }).waitFor();
-  assert.match(await page.locator('.pres-top .app').textContent(), /CAPY BURST Deck Showcase/);
+  assert.match(await page.locator('.pres-top .app').textContent(), /CapyBurst Decklist Showcase/);
   await page.context().close();
   g.post({ action: 'deleteEvent', token: t, eventId: ev });
 });

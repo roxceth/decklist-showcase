@@ -50,7 +50,7 @@ export async function startDevServer({ port = 0, latencyMs = 0 } = {}) {
     let p = decodeURIComponent(url.pathname);
     if (p === '/config.js') {
       res.writeHead(200, { 'Content-Type': MIME['.js'] });
-      return res.end("window.DS_CONFIG = { API_URL: '/api', APP_NAME: 'CAPY BURST Deck Showcase', LOGO_URL: 'assets/logo.png' };");
+      return res.end("window.DS_CONFIG = { API_URL: '/api', APP_NAME: 'CapyBurst Decklist Showcase', LOGO_URL: 'assets/logo.png' };");
     }
     if (p === '/') p = '/index.html';
     const file = path.join(root, p);

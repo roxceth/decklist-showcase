@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.1.1
-- Nombre visible para todos: **CAPY BURST Deck Showcase** (cabecera, pestaña del navegador y presentación). Se cambia en `config.js` (`APP_NAME`).
+- Nombre visible para todos: **CapyBurst Decklist Showcase** (cabecera, pestaña del navegador y presentación). Se cambia en `config.js` (`APP_NAME`).
 - Logo de CapyBros (`assets/logo.png`, en dorado sobre fondo transparente) en la cabecera y como ícono de la pestaña. Se cambia con `LOGO_URL` en `config.js`; si el archivo falta, se usa el ícono de siempre.
 - Botón **Refresh** (solo manual, sin actualización automática, para no saturar Apps Script) en panel, editar torneo y página del jugador. En la presentación: botón o tecla **R** para recargar las listas sin perder la posición.
 - Corregido "Hector D.." (doble punto) en el panel.

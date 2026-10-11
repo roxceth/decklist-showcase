@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decklist Showcase - Fase 0</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0d0f14; --panel:#151922; --panel2:#1c212d; --line:#2a3140; --gold:#e0b14a; --text:#eef0f4; --muted:#9aa3b5; --green:#7fe0ab; --red:#ff8a8f; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif; }
+  header { display:flex; align-items:center; gap:12px; padding:18px 24px; border-bottom:1px solid var(--line); }
+  header .brand { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:22px; letter-spacing:.12em; color:var(--gold); }
+  main { max-width:900px; margin:0 auto; padding:28px 24px 60px; display:flex; flex-direction:column; gap:20px; }
+  h1 { margin:0; font-family:'Rajdhani',sans-serif; font-size:40px; line-height:1; }
+  p { margin:6px 0 0; color:var(--muted); line-height:1.5; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; }
+  .cfg { display:inline-block; padding:4px 10px; border-radius:999px; font-size:13px; font-weight:600; border:1px solid; }
+  .cfg.ok { color:var(--green); border-color:#3fb97a; }
+  .cfg.bad { color:var(--red); border-color:#5a2a2e; }
+  .controls { display:flex; flex-wrap:wrap; align-items:center; gap:14px; }
+  button { font-family:inherit; min-height:48px; padding:0 22px; border-radius:10px; border:none; background:var(--gold); color:#0d0f14; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; letter-spacing:.08em; cursor:pointer; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  button.secondary { background:var(--panel2); color:var(--text); border:1px solid var(--line); font-size:16px; letter-spacing:0; }
+  label { font-size:14px; color:var(--muted); }
+  input[type=file] { color:var(--muted); font-size:14px; }
+  .row { display:flex; gap:14px; padding:12px 0; border-top:1px solid var(--panel2); align-items:flex-start; }
+  .row:first-child { border-top:none; }
+  .badge { flex:0 0 84px; text-align:center; padding:4px 0; border-radius:8px; font-size:12px; font-weight:600; letter-spacing:.06em; border:1px solid var(--line); color:var(--muted); }
+  .badge.pass { color:var(--green); border-color:#3fb97a; }
+  .badge.warn { color:var(--gold); border-color:var(--gold); }
+  .badge.fail { color:var(--red); border-color:#5a2a2e; }
+  .badge.run { color:var(--text); border-color:var(--text); }
+  .title { font-weight:600; }
+  .detail { margin-top:2px; font-size:14px; color:var(--muted); word-break:break-word; }
+  #preview img { max-width:100%; border-radius:10px; border:1px solid var(--line); }
+  textarea { width:100%; min-height:220px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:12px; font-family:ui-monospace,monospace; font-size:13px; line-height:1.5; }
+</style>
+</head>
+<body>
+<header><span class="brand">DECKLIST SHOWCASE</span></header>
+<main>
+  <div>
+    <h1>Fase 0: pruebas de conexión</h1>
+    <p>Esta página comprueba que GitHub Pages y Apps Script se hablan bien: lectura entre sitios, tamaños de envío, Hojas, Drive y velocidad.</p>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <span id="cfg" class="cfg bad">...</span>
+      <button id="run" disabled>EJECUTAR TODAS LAS PRUEBAS</button>
+    </div>
+    <div style="margin-top:14px">
+      <label for="photo">Opcional: elige una foto real de una lista para la prueba T6 (si no, uso una imagen sintética)</label><br>
+      <input id="photo" type="file" accept="image/*">
+    </div>
+  </div>
+
+  <div class="card" id="rows" aria-live="polite"></div>
+
+  <div class="card" id="preview" aria-live="polite"></div>
+
+  <div class="card" id="outwrap" hidden>
+    <p style="margin:0 0 10px">Resultado listo para pegarme en el chat:</p>
+    <textarea id="out" readonly></textarea>
+    <div style="margin-top:12px"><button id="copy" class="secondary">Copiar resultado</button></div>
+  </div>
+</main>
+<script src="config.js"></script>
+<script src="tests.js"></script>
+</body>
+</html>

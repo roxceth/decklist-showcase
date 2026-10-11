@@ -42,7 +42,7 @@ export function loginView(notice) {
     h('main', { class: 'page' },
       h('div', { class: 'hero' },
         h('div', { class: 'hero-text' },
-          h('div', { class: 'eyebrow', text: 'Union Arena · Tournament tool' }),
+          h('div', { class: 'eyebrow', text: 'Union Arena · CapyBros' }),
           h('h1', null, 'Every decklist.', h('br'), 'One link.'),
           h('p', { class: 'subtitle', text: 'Post your tournament results, share the link, and players claim their name and submit what they played. Then present all the lists in one view.' }),
           h('div', { class: 'steps' },

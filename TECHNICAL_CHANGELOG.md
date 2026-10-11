@@ -1,5 +1,11 @@
 # Technical changelog
 
+## 0.1.1
+- `config.js`: `APP_NAME`, `LOGO_URL`. `ui.js`: `appName()`, `logoEl()` (img con fallback a SVG en `error`), `refreshButton()`.
+- Jugador: `mode` (picker/confirm/form) controla el refresco automático de 60 s; se limpia con `onLeave`.
+- Presentación: `presentView(eventId, startIndex)`; `reload()` hace `runLeave()` y vuelve a montar conservando el índice.
+- Pruebas e2e: +2 (marca/refrescos, fallback de logo). Total e2e 15.
+
 ## 0.1.0
 - **Arquitectura**: sitio estático (ES modules sin dependencias) + Apps Script web app como API JSON (`POST text/plain`, evita preflight CORS) + Sheets + Drive. Router por hash (`#/`, `#/dashboard`, `#/new`, `#/edit/<id>`, `#/present/<id>`, `#/e/<id>`).
 - **API**: público `ping, getEvent, claimPlayer, submitDeck, login`; organizador (token de sesión en CacheService, 6 h, revalidado contra la hoja Organizers en cada llamada) `logout, listEvents, createEvent, getEventAdmin, updateEvent, setStatus, addPlayer, updatePlayer, removePlayer, releaseName, releaseList, undoRelease, getDecklists, getPhoto, deleteEvent`. Respuestas `{ok,data}` / `{ok:false,error:{code,message}}`; errores internos se registran y se devuelven genéricos.

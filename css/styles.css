@@ -222,3 +222,6 @@ body.presenting { overflow: hidden; }
 .pres.idle .tools { opacity: 0; }
 .pres.idle { cursor: none; }
 .nav .btn.small { white-space: nowrap; }
+
+.brand-logo { height: 40px; width: auto; max-width: 120px; object-fit: contain; display: block; }
+@media (max-width: 640px) { .brand span { font-size: 16px; letter-spacing: 0.08em; } .brand-logo { height: 32px; } }

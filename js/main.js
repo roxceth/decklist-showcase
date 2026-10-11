@@ -9,6 +9,7 @@ import { playerView } from './views/player.js';
 import { presentView } from './views/present.js';
 import { brand } from './views/layout.js';
 
+try { if (window.DS_CONFIG && window.DS_CONFIG.APP_NAME) document.title = window.DS_CONFIG.APP_NAME; } catch (e) { /* ignore */ }
 let sessionNotice = '';
 setUnauthorizedHandler(() => {
   sessionNotice = 'Your session expired. Please sign in again.';

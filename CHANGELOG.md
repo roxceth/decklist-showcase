@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+- Nombre visible para todos: **CAPY BURST Deck Showcase** (cabecera, pestaña del navegador y presentación). Se cambia en `config.js` (`APP_NAME`).
+- Soporte de logo del equipo: se configura con `LOGO_URL` en `config.js` (si el archivo falta, se usa el ícono de siempre).
+- Botón **Refresh** en panel, editar torneo y página del jugador (el jugador además se actualiza solo cada 60 s mientras mira la lista de nombres, nunca mientras llena el formulario). En la presentación: botón o tecla **R** para recargar las listas sin perder la posición.
+- Corregido "Hector D.." (doble punto) en el panel.
+
 ## 0.1.0 — primera versión
 **Organizador**
 - Inicio de sesión con nombre y contraseña (varios organizadores; todos ven todos los torneos).

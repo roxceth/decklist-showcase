@@ -1,4 +1,4 @@
-import { h, mount, spinner, errorBanner, icon, onLeave, ordinal } from '../ui.js';
+import { h, mount, spinner, errorBanner, icon, onLeave, runLeave, ordinal, appName } from '../ui.js';
 import { org } from '../api.js';
 import { parseDeckText } from '../../shared/parsers.js';
 
@@ -13,7 +13,7 @@ export function columnsFor(n) {
   return n <= 18 ? 2 : n <= 39 ? 3 : 4;
 }
 
-export async function presentView(eventId) {
+export async function presentView(eventId, startIndex = 0) {
   let alive = true;
   onLeave(() => { alive = false; document.body.classList.remove('presenting'); });
   const shell = h('div', { class: 'shell' }, h('main', { class: 'page' }, spinner('Loading lists...')));
@@ -44,7 +44,7 @@ export async function presentView(eventId) {
     return;
   }
 
-  let i = 0;
+  let i = Math.min(Math.max(0, startIndex), slides.length - 1);
   let zoom = null;
   const photos = new Map(); // deckId -> {state:'loading'|'ready'|'error', url, promise}
 
@@ -133,7 +133,7 @@ export async function presentView(eventId) {
     root.replaceChildren(
       h('div', { class: 'pres-top' },
         h('span', { class: 'ev', text: evName + ' · ' + shortDate(evDate) }),
-        h('span', { class: 'app', text: 'Decklist Showcase' })),
+        h('span', { class: 'app', text: appName() })),
       h('div', { class: 'pres-main' },
         h('div', { class: 'pres-info' },
           h('div', { class: 'pres-place' },
@@ -148,6 +148,7 @@ export async function presentView(eventId) {
         h('div', { class: 'stack' }, dots, missing ? h('span', { class: 'hint', text: missing + (missing === 1 ? ' player has' : ' players have') + ' no list' }) : null),
         h('div', { class: 'nav tools' },
           h('button', { class: 'btn small', type: 'button', onclick: exit }, 'Exit'),
+          h('button', { class: 'btn small', type: 'button', onclick: reload }, 'Reload (R)'),
           h('button', { class: 'btn small', type: 'button', onclick: toggleFullscreen }, 'Fullscreen (F)'),
           h('button', { class: 'round', type: 'button', 'aria-label': 'Previous player', onclick: () => go(-1) }, icon('left')),
           h('span', { class: 'count', text: (i + 1) + ' / ' + slides.length }),
@@ -190,6 +191,12 @@ export async function presentView(eventId) {
       else document.documentElement.requestFullscreen();
     } catch (e) { /* not supported */ }
   }
+  // Fetches the lists again (players may have sent more while presenting) and keeps the current slide.
+  function reload() {
+    const keep = i;
+    runLeave();
+    presentView(eventId, keep);
+  }
   function exit() {
     location.hash = '#/dashboard';
   }
@@ -205,6 +212,7 @@ export async function presentView(eventId) {
       case 'End': i = slides.length - 1; render(); break;
       case 'f': case 'F': toggleFullscreen(); break;
       case 'z': case 'Z': toggleZoom(); break;
+      case 'r': case 'R': reload(); break;
       case 'Escape': if (zoom) toggleZoom(); else if (!document.fullscreenElement) exit(); break;
       default: return;
     }

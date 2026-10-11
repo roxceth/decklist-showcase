@@ -1,4 +1,4 @@
-import { h, mount, spinner, errorBanner, toast, formatDate, plural, ordinal, icon, COLORS, setBusy } from '../ui.js';
+import { h, mount, refreshButton, onLeave, spinner, errorBanner, toast, formatDate, plural, ordinal, icon, COLORS, setBusy } from '../ui.js';
 import { call } from '../api.js';
 import { getSecret } from '../session.js';
 import { parseDeckText, checkDeckLink, LIMITS } from '../../shared/parsers.js';
@@ -42,7 +42,19 @@ export async function playerView(eventId) {
       h('p', { class: 'hint', text: 'This page and all lists are deleted on ' + formatDate(data.event.expiresAt.slice(0, 10)) + '.' }));
   }
 
+  // Refresh without touching the browser. Never while the player is filling the form (it would wipe the text).
+  let mode = 'picker';
+  async function refresh() {
+    await load();
+    root.replaceChildren(...draw());
+  }
+  const auto = setInterval(() => {
+    if (mode === 'picker' && !document.hidden) refresh().catch(() => {});
+  }, 60000);
+  onLeave(() => clearInterval(auto));
+
   function draw() {
+    mode = data.me && !(data.me.deck && data.me.locked) ? 'form' : 'picker';
     if (data.me) return drawMine();
     return drawPicker();
   }
@@ -50,7 +62,11 @@ export async function playerView(eventId) {
   // ---------------------------------------------------------------- name picker
   function drawPicker(picked) {
     const ev = data.event;
-    if (picked) return drawConfirm(picked);
+    if (picked) {
+      mode = 'confirm';
+      return drawConfirm(picked);
+    }
+    mode = 'picker';
     const rows = data.players.map((p) => {
       let right;
       if (p.state === 'open' && ev.status === 'open') {
@@ -73,6 +89,7 @@ export async function playerView(eventId) {
         h('h2', { class: 'sec', text: 'Find your name' }),
         h('p', { class: 'subtitle', style: 'margin-top:4px', text: 'Tap "That\'s me" next to your name, then send the decklist you played.' })),
       h('div', { class: 'claim-list' }, rows),
+      h('div', null, refreshButton(refresh)),
       footer()
     ];
   }
@@ -126,7 +143,8 @@ export async function playerView(eventId) {
             h('span', { class: 'dot ' + me.deck.deckColor }),
             h('strong', { text: (me.deck.deckName ? me.deck.deckName + ' · ' : '') + me.deck.deckColor }),
             h('span', { class: 'hint', text: ({ txt: 'Sent as text', photo: 'Sent as image', link: 'Sent as Exburst link' })[me.deck.type] })),
-          h('p', { class: 'hint', text: 'Need to change it? Ask the organizer to reopen your list, then come back to this page on this device.' }))
+          h('p', { class: 'hint', text: 'Need to change it? Ask the organizer to reopen your list, then tap Refresh on this page.' }),
+          h('div', null, refreshButton(refresh)))
       ]);
     }
     return top.concat(drawForm(me));

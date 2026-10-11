@@ -1,9 +1,9 @@
-import { h, icon } from '../ui.js';
+import { h, appName, logoEl } from '../ui.js';
 import { getOrganizer, clearOrganizer } from '../session.js';
 import { call } from '../api.js';
 
 export function brand(href = '#/') {
-  return h('a', { class: 'brand', href, 'aria-label': 'Decklist Showcase home' }, icon('logo'), h('span', { text: 'DECKLIST SHOWCASE' }));
+  return h('a', { class: 'brand', href, 'aria-label': appName() + ' home' }, logoEl(), h('span', { text: appName().toUpperCase() }));
 }
 
 export function organizerShell(...pageChildren) {

@@ -531,6 +531,69 @@ test('errors: network failure, garbage answer, closed tournament, expired sessio
   await page.context().close();
 });
 
+test('branding and refresh buttons: name, logo fallback, dashboard / edit / player / presentation refresh without reloading the browser', async () => {
+  const t = srv.gas.post({ action: 'login', name: 'Hector D.', password: PW }).data.token;
+  const ev = srv.gas.post({ action: 'createEvent', token: t, name: 'Refresh Cup', datePlayed: '2026-10-11', expireDays: 14, resultsText: 'Uno\nDos\nTres' }).data.eventId;
+  const page = await newPage();
+  await login(page);
+  assert.equal(await page.title(), 'CAPY BURST Deck Showcase');
+  assert.match(await page.locator('.brand span').textContent(), /CAPY BURST DECK SHOWCASE/);
+  assert.equal(await page.locator('.brand img.brand-logo').count(), 1);
+  await shot(page, '12-branding-desktop');
+  // dashboard picks up an event created elsewhere
+  srv.gas.post({ action: 'createEvent', token: t, name: 'Created Elsewhere', datePlayed: '2026-10-11', expireDays: 14, resultsText: 'A\nB' });
+  assert.equal(await page.getByRole('heading', { name: 'Created Elsewhere' }).count(), 0);
+  await page.getByRole('button', { name: /Refresh/ }).click();
+  await page.getByRole('heading', { name: 'Created Elsewhere' }).waitFor();
+  // edit page shows a claim made by a player in the meantime
+  await page.goto(srv.base + '/#/edit/' + ev);
+  await page.getByRole('heading', { name: 'Edit tournament' }).waitFor();
+  const ps = srv.gas.post({ action: 'getEvent', eventId: ev }).data.players;
+  srv.gas.post({ action: 'claimPlayer', eventId: ev, playerId: ps[0].playerId, secret: 'Q'.repeat(32) });
+  await page.locator('.trow', { hasText: 'Uno' }).getByText('Not claimed yet').waitFor();
+  await page.getByRole('button', { name: /Refresh/ }).click();
+  await page.locator('.trow', { hasText: 'Uno' }).getByText('Claimed · no list yet').waitFor();
+  // player page
+  const pl = await newPage(MOBILE);
+  await pl.goto(srv.base + '/#/e/' + ev);
+  await pl.locator('.claim-row', { hasText: 'Dos' }).getByRole('button', { name: "That's me" }).waitFor();
+  srv.gas.post({ action: 'claimPlayer', eventId: ev, playerId: ps[1].playerId, secret: 'R'.repeat(32) });
+  await pl.getByRole('button', { name: /Refresh/ }).click();
+  await pl.locator('.claim-row', { hasText: 'Dos' }).getByText(/Claimed/).waitFor();
+  // a player filling the form is never refreshed under their hands: typed text survives the 60 s timer's guard
+  await pl.locator('.claim-row', { hasText: 'Tres' }).getByRole('button', { name: "That's me" }).click();
+  await pl.getByRole('button', { name: "Yes, that's me" }).click();
+  await pl.locator('#deck-text').fill('4 x ABC');
+  await pl.getByText('Send your decklist').waitFor();
+  assert.equal(await pl.getByRole('button', { name: /Refresh/ }).count(), 0, 'no refresh button inside the form');
+  await pl.context().close();
+  // presentation: Reload (R) brings new lists and keeps the position
+  const g = srv.gas;
+  g.post({ action: 'submitDeck', eventId: ev, playerId: ps[0].playerId, secret: 'Q'.repeat(32), type: 'txt', deckColor: 'Red', content: '// Main deck\n4 x AAA-1' });
+  await page.goto(srv.base + '/#/present/' + ev);
+  await page.locator('.pres-name').waitFor();
+  assert.equal(await page.locator('.count').textContent(), '1 / 1');
+  g.post({ action: 'submitDeck', eventId: ev, playerId: ps[1].playerId, secret: 'R'.repeat(32), type: 'link', deckColor: 'Blue', content: 'https://exburst.dev/ua/en/deck/9' });
+  await page.keyboard.press('r');
+  await page.locator('.count', { hasText: '1 / 2' }).waitFor();
+  await page.keyboard.press('ArrowRight');
+  await page.getByRole('button', { name: 'Reload (R)' }).click();
+  await page.locator('.count', { hasText: '2 / 2' }).waitFor();
+  assert.match(await page.locator('.pres-top .app').textContent(), /CAPY BURST Deck Showcase/);
+  await page.context().close();
+  g.post({ action: 'deleteEvent', token: t, eventId: ev });
+});
+
+test('logo falls back to the built-in icon when the configured file is missing', async () => {
+  const page = await newPage();
+  await page.route('**/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.DS_CONFIG={API_URL:'/api',APP_NAME:'X Showcase',LOGO_URL:'assets/does-not-exist.png'};" }));
+  await page.goto(srv.base + '/#/');
+  await page.locator('.brand svg').waitFor();
+  assert.equal(await page.locator('.brand img').count(), 0);
+  assert.match(await page.locator('.brand span').textContent(), /X SHOWCASE/);
+  await page.context().close();
+});
+
 test('no unexpected console errors during the whole run', () => {
   assert.deepEqual(consoleErrors, []);
 });

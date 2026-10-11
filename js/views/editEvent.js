@@ -1,4 +1,4 @@
-import { h, mount, spinner, errorBanner, toast, modal, copyText, eventLink, formatDate, plural } from '../ui.js';
+import { h, mount, refreshButton, spinner, errorBanner, toast, modal, copyText, eventLink, formatDate, plural } from '../ui.js';
 import { org } from '../api.js';
 import { parseDeckText, checkTournamentLink } from '../../shared/parsers.js';
 import { downloadTxt, downloadZip } from '../exporter.js';
@@ -99,7 +99,8 @@ export async function editEventView(eventId) {
             } catch (err) { toast(err.message, 'error'); }
           }
         }, open ? 'Stop accepting lists' : 'Accept lists again'),
-        h('a', { class: 'btn primary', style: 'font-size:16px', href: '#/present/' + ev.eventId }, 'Present')));
+        h('a', { class: 'btn primary', style: 'font-size:16px', href: '#/present/' + ev.eventId }, 'Present'),
+        refreshButton(async () => { await load(); draw(); })));
 
     // ---- players
     const submittedCount = data.players.filter((p) => p.deck).length;

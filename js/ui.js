@@ -9,6 +9,46 @@ const SVG = {
   plus: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
 };
 
+export function appName() {
+  return (window.DS_CONFIG && window.DS_CONFIG.APP_NAME) || 'Decklist Showcase';
+}
+
+// Team logo from config (falls back to the built-in icon if the file is missing).
+export function logoEl() {
+  const url = window.DS_CONFIG && window.DS_CONFIG.LOGO_URL;
+  const fallback = () => icon('logo');
+  if (!url) return fallback();
+  const img = document.createElement('img');
+  img.className = 'brand-logo';
+  img.alt = '';
+  img.setAttribute('aria-hidden', 'true');
+  img.src = url;
+  img.addEventListener('error', () => img.replaceWith(fallback()), { once: true });
+  return img;
+}
+
+// "Refresh" button: runs fn (async), shows busy state, reports failures as a toast.
+export function refreshButton(fn, label = 'Refresh') {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn small';
+  btn.textContent = '\u21bb ' + label;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = '\u21bb Refreshing...';
+    try {
+      await fn();
+    } catch (e) {
+      toast((e && e.message) || 'Could not refresh.', 'error');
+    }
+    if (btn.isConnected) {
+      btn.disabled = false;
+      btn.textContent = '\u21bb ' + label;
+    }
+  });
+  return btn;
+}
+
 export function icon(name) {
   const t = document.createElement('template');
   t.innerHTML = SVG[name]; // static markup only

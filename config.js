@@ -1,4 +1,5 @@
-// Pega aquí la URL del despliegue de Apps Script (termina en /exec).
-window.APP_CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbzjE2zVRoHAXtKOToHZT4zD5FAEFhen-zqIF89BSvgkOtTIArQUZAddNVnqJ3XWWJMXrw/exec'
+// Edit this file to point the site to your Apps Script web app (the URL ending in /exec).
+window.DS_CONFIG = {
+  API_URL: '',
+  APP_NAME: 'Decklist Showcase'
 };

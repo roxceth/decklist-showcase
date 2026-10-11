@@ -424,6 +424,30 @@ test('presentation: slides for text, image and link; keyboard; zoom; no horizont
   await page.context().close();
 });
 
+for (const [label, vp] of [['portrait 390x664', { width: 390, height: 664 }], ['landscape 844x390', { width: 844, height: 390 }], ['small 360x640', { width: 360, height: 640 }]]) {
+  test('presentation on a phone (' + label + '): controls stay inside the screen', async () => {
+    const page = await newPage({ viewport: vp, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await login(page);
+    await page.goto(srv.base + '/#/present/' + s.eventId);
+    await page.locator('.pres-name').waitFor();
+    const m = await page.evaluate(() => {
+      const vw = innerWidth, vh = innerHeight;
+      const out = {};
+      for (const sel of ['.pres-arrows .round', '.pres-arrows .round.next', '.count', '.pres-tools .btn:not(.fs-btn)']) {
+        const els = [...document.querySelectorAll(sel)];
+        out[sel] = els.map((e) => { const r = e.getBoundingClientRect(); return r.left >= -0.5 && r.right <= vw + 0.5 && r.top >= -0.5 && r.bottom <= vh + 0.5 && r.width > 0; });
+      }
+      return { out, sw: document.documentElement.scrollWidth, vw };
+    });
+    for (const [sel, oks] of Object.entries(m.out)) assert.ok(oks.length > 0 && oks.every(Boolean), sel + ' must be fully visible: ' + JSON.stringify(oks));
+    assert.equal(m.sw, m.vw, 'no horizontal overflow');
+    // The next arrow really works by tapping it.
+    await page.locator('.pres-arrows .round.next').tap();
+    assert.match(await page.locator('.count').textContent(), /^2 /);
+    await page.context().close();
+  });
+}
+
 test('presentation with a long deck (30 different cards) uses 3 columns and stays inside the panel', async () => {
   const { eventId } = await seedBig();
   const page = await newPage({ viewport: { width: 1280, height: 720 } });
@@ -591,6 +615,49 @@ test('logo falls back to the built-in icon when the configured file is missing',
   await page.locator('.brand svg').waitFor();
   assert.equal(await page.locator('.brand img').count(), 0);
   assert.match(await page.locator('.brand span').textContent(), /X SHOWCASE/);
+  await page.context().close();
+});
+
+test('create tournament on a phone: buttons are full width and fields do not trigger iOS zoom', async () => {
+  const page = await newPage(MOBILE);
+  await login(page);
+  await page.goto(srv.base + '/#/new');
+  await page.locator('form').waitFor();
+  const m = await page.evaluate(() => {
+    const btn = document.querySelector('form .btn.primary').getBoundingClientRect();
+    const cancel = [...document.querySelectorAll('form a.btn')].find((a) => /Cancel/.test(a.textContent)).getBoundingClientRect();
+    const sizes = [...document.querySelectorAll('form input, form textarea')].map((e) => parseFloat(getComputedStyle(e).fontSize));
+    return { bw: btn.width, bh: btn.height, cw: cancel.width, cTop: cancel.top, bBottom: btn.bottom, sizes };
+  });
+  assert.ok(m.bh < 70, 'primary button must not wrap to several lines');
+  assert.ok(Math.abs(m.bw - m.cw) < 2, 'buttons share the same width');
+  assert.ok(m.cTop >= m.bBottom, 'Cancel sits below the primary button');
+  assert.ok(m.sizes.every((x) => x >= 16), 'inputs use 16 px or more: ' + m.sizes);
+  await noHorizontalOverflow(page, 'create form');
+  await page.context().close();
+});
+
+test('home-screen install: manifest and touch icons are valid and reachable', async () => {
+  const page = await newPage(MOBILE);
+  await page.goto(srv.base + '/#/');
+  const links = await page.evaluate(() => ({
+    manifest: document.querySelector('link[rel=manifest]')?.getAttribute('href'),
+    touch: document.querySelector('link[rel=apple-touch-icon]')?.getAttribute('href'),
+    theme: document.querySelector('meta[name=theme-color]')?.content
+  }));
+  assert.ok(links.manifest && links.touch && links.theme);
+  const man = await (await page.request.get(srv.base + '/' + links.manifest)).json();
+  assert.equal(man.name, 'CapyBurst Decklist Showcase');
+  assert.equal(man.display, 'standalone');
+  assert.ok(man.icons.some((i) => i.sizes === '192x192') && man.icons.some((i) => i.sizes === '512x512') && man.icons.some((i) => i.purpose === 'maskable'));
+  for (const src of [links.touch, ...man.icons.map((i) => i.src)]) {
+    const r = await page.request.get(srv.base + '/' + src);
+    assert.equal(r.status(), 200, src);
+    const b = await r.body();
+    assert.equal(b.subarray(1, 4).toString(), 'PNG', src + ' is a PNG');
+  }
+  const t = await (await page.request.get(srv.base + '/' + links.touch)).body();
+  assert.equal(t.readUInt32BE(16), 180); assert.equal(t.readUInt32BE(20), 180);
   await page.context().close();
 });
 

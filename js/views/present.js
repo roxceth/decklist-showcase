@@ -145,14 +145,16 @@ export async function presentView(eventId, startIndex = 0) {
           h('div', { class: 'pres-panel-head' }, h('h2', { text: 'DECKLIST' }), h('span', { text: panel.meta })),
           panel.body)),
       h('div', { class: 'pres-bottom' },
-        h('div', { class: 'stack' }, dots, missing ? h('span', { class: 'hint', text: missing + (missing === 1 ? ' player has' : ' players have') + ' no list' }) : null),
-        h('div', { class: 'nav tools' },
-          h('button', { class: 'btn small', type: 'button', onclick: exit }, 'Exit'),
-          h('button', { class: 'btn small', type: 'button', onclick: reload }, 'Reload (R)'),
-          h('button', { class: 'btn small', type: 'button', onclick: toggleFullscreen }, 'Fullscreen (F)'),
-          h('button', { class: 'round', type: 'button', 'aria-label': 'Previous player', onclick: () => go(-1) }, icon('left')),
-          h('span', { class: 'count', text: (i + 1) + ' / ' + slides.length }),
-          h('button', { class: 'round next', type: 'button', 'aria-label': 'Next player', onclick: () => go(1) }, icon('right')))));
+        h('div', { class: 'stack pres-dots' }, dots, missing ? h('span', { class: 'hint', text: missing + (missing === 1 ? ' player has' : ' players have') + ' no list' }) : null),
+        h('div', { class: 'nav' },
+          h('div', { class: 'pres-tools tools' },
+            h('button', { class: 'btn small', type: 'button', onclick: exit }, 'Exit'),
+            h('button', { class: 'btn small', type: 'button', onclick: reload }, 'Reload (R)'),
+            h('button', { class: 'btn small fs-btn', type: 'button', onclick: toggleFullscreen }, 'Fullscreen (F)')),
+          h('div', { class: 'pres-arrows' },
+            h('button', { class: 'round', type: 'button', 'aria-label': 'Previous player', onclick: () => go(-1) }, icon('left')),
+            h('span', { class: 'count', text: (i + 1) + ' / ' + slides.length }),
+            h('button', { class: 'round next', type: 'button', 'aria-label': 'Next player', onclick: () => go(1) }, icon('right'))))));
     if (zoom) showZoom();
     prefetch();
   }
@@ -218,6 +220,17 @@ export async function presentView(eventId, startIndex = 0) {
     }
   }
   document.addEventListener('keydown', onKey);
+  // Swipe left/right on touch screens.
+  let t0 = null;
+  root.addEventListener('touchstart', (e) => { const t = e.changedTouches[0]; t0 = { x: t.clientX, y: t.clientY }; }, { passive: true });
+  root.addEventListener('touchend', (e) => {
+    if (!t0) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - t0.x;
+    const dy = t.clientY - t0.y;
+    t0 = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
   let idle;
   const onMove = () => {
     root.classList.remove('idle');

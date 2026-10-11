@@ -198,6 +198,7 @@ body.presenting { overflow: hidden; }
 .dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--line); display: block; }
 .dots i.on { width: 28px; background: var(--gold); }
 .nav { display: flex; align-items: center; gap: 12px; }
+.pres-tools, .pres-arrows { display: flex; align-items: center; gap: 12px; }
 .nav .round { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: var(--card-2); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
 .nav .round.next { background: var(--gold); border-color: var(--gold); }
 .nav .count { min-width: 64px; text-align: center; font-family: var(--font-head); font-weight: 700; font-size: 22px; }
@@ -225,3 +226,41 @@ body.presenting { overflow: hidden; }
 
 .brand-logo { height: 44px; width: auto; max-width: 120px; object-fit: contain; display: block; }
 @media (max-width: 640px) { .brand span { font-size: 16px; letter-spacing: 0.08em; } .brand-logo { height: 32px; } }
+
+/* ---- mobile fixes ---- */
+input[type="date"].input { -webkit-appearance: none; appearance: none; min-height: 48px; text-align: left; }
+input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
+.textarea { font-size: 16px; } /* 16 px or more stops iOS from zooming the page when a field is focused */
+.pres { padding-bottom: max(2.6vh, env(safe-area-inset-bottom)); padding-left: max(4.4vw, env(safe-area-inset-left)); padding-right: max(4.4vw, env(safe-area-inset-right)); }
+@media (max-width: 640px) {
+  .form-actions { flex-direction: column; align-items: stretch; }
+  .form-actions > * { width: 100%; flex: none !important; }
+}
+@media (max-width: 760px) {
+  .pres { padding: 10px 12px max(10px, env(safe-area-inset-bottom)); gap: 8px; }
+  .pres-top { font-size: 12px; letter-spacing: 0.1em; }
+  .pres-top .app { display: none; }
+  .pres-info { gap: 1.2vh; }
+  .pres-name { font-size: clamp(36px, 11vw, 64px); }
+  .pres-rank { width: 56px; height: 56px; font-size: 34px; border-radius: 14px; }
+  .pres-place b { font-size: 20px; }
+  .pres-panel { min-height: 48dvh; padding: 14px; }
+  .pres-dots { display: none; }
+  .pres-bottom { flex-direction: column; align-items: stretch; gap: 8px; }
+  .nav { flex-direction: column-reverse; align-items: stretch; gap: 8px; }
+  .pres-arrows { justify-content: space-between; }
+  .pres-arrows .round { width: 56px; height: 56px; }
+  .pres-tools { justify-content: center; }
+}
+@media (hover: none) { .fs-btn { display: none; } }
+@media (max-height: 460px) and (orientation: landscape) {
+  .pres { padding-top: 6px; gap: 4px; }
+  .pres-top { display: none; }
+  .pres-main { gap: 2vw; }
+  .pres-info { flex-basis: 28%; }
+  .pres-name { font-size: clamp(28px, 11vh, 56px); }
+  .pres-rank { width: 48px; height: 48px; font-size: 28px; }
+  .pres-panel { padding: 10px 14px; gap: 6px; }
+  .nav .round { width: 40px; height: 40px; }
+  .nav .count { font-size: 18px; }
+}

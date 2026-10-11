@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+- **Presentación en celular**: los botones de abajo (flechas, contador, Exit, Reload) ya no se salen de la pantalla ni quedan tapados. En vertical se apilan (flechas grandes arriba, Exit/Reload abajo); en horizontal todo cabe en una línea. Se puede **deslizar** el dedo a izquierda/derecha para cambiar de jugador. Respeta la barra inferior del iPhone.
+- **Crear torneo en celular**: botones "Create & get link" y "Cancel" a todo el ancho (ya no se parte el texto), campos de 16 px (Safari ya no hace zoom al tocar), selector de fecha uniforme.
+- **Guardar como app en la pantalla de inicio**: ahora aparece el logo de CapyBros (ícono dorado sobre fondo oscuro), con el nombre "CapyBurst" y abre a pantalla completa. Si ya la habías guardado antes, elimina el acceso directo y vuelve a agregarlo para que tome el ícono nuevo.
+
 ## 0.1.1
 - Nombre visible para todos: **CapyBurst Decklist Showcase** (cabecera, pestaña del navegador y presentación). Se cambia en `config.js` (`APP_NAME`).
 - Logo de CapyBros (`assets/logo.png`, en dorado sobre fondo transparente) en la cabecera y como ícono de la pestaña. Se cambia con `LOGO_URL` en `config.js`; si el archivo falta, se usa el ícono de siempre.

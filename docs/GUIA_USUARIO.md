@@ -67,6 +67,8 @@ Los torneos se borran solos al vencer. *Delete now* los borra de inmediato junto
 
 Importante: usa siempre el mismo celular/navegador. Si cambias de dispositivo, el organizador debe liberar tu nombre.
 
+**Guardar como app:** en iPhone (Safari) toca Compartir > *Agregar a pantalla de inicio*; en Android (Chrome) menú ⋮ > *Instalar app* / *Agregar a pantalla de inicio*. Aparecerá con el logo de CapyBros.
+
 ![Elegir nombre](screenshots/04-player-claim-mobile.png)
 ![Enviar lista](screenshots/05-player-submit-mobile.png)
 

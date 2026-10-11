@@ -55,7 +55,7 @@ export function newEventView() {
     h('div', { class: 'stack' },
       h('label', { class: 'lbl', for: 'texburst', text: 'Exburst tournament link (optional)' }), exburst),
     formMsg,
-    h('div', { class: 'row' }, submit, h('a', { class: 'btn', href: '#/dashboard' }, 'Cancel')));
+    h('div', { class: 'row form-actions' }, submit, h('a', { class: 'btn', href: '#/dashboard' }, 'Cancel')));
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -1,5 +1,11 @@
 # Technical changelog
 
+## 0.1.2
+- `manifest.webmanifest` + `apple-touch-icon` (180), `icon-192/512`, `icon-maskable-512` (opacos, fondo #0d0f14, generados de `assets/logo.png`); meta `theme-color`, `apple-mobile-web-app-*`, `viewport-fit=cover`. iOS ignora los íconos del manifest y usa apple-touch-icon.
+- Presentación: barra inferior reestructurada (`.pres-tools` / `.pres-arrows`), media queries ≤760 px y landscape bajo, safe-area insets, swipe táctil, botón Fullscreen oculto en `(hover:none)`.
+- Formulario nuevo torneo: `.form-actions` apilado ≤640 px; `.textarea` 16 px; `input[type=date]` con `appearance:none`.
+- Pruebas e2e: +5 (presentación en 3 tamaños de celular, formulario móvil, manifest/íconos). Total 79.
+
 ## 0.1.1
 - `config.js`: `APP_NAME`, `LOGO_URL`. `ui.js`: `appName()`, `logoEl()` (img con fallback a SVG en `error`), `refreshButton()`.
 - Sin polling: solo refresco manual (menos llamadas a Apps Script). Logo: original negro/blanco convertido a alfa (luminancia invertida) y teñido de dorado #e0b14a, 512x512.

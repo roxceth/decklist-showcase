@@ -1,5 +1,9 @@
 # Technical changelog
 
+## 0.1.3
+- `presentView(eventId, startIndex = -1)`: `view` = `list` | `slide`; `renderList()` pinta todos los `entries` (no solo los que tienen deck); `showList()`; teclas L / Esc (slide -> list -> salir); Home/End/Z/flechas solo en slide; Reload conserva la vista. CSS `.standings` (grid por columnas, `.multi` apila el deck bajo el nombre).
+- Pruebas e2e: +1 (listado: orden, clic, volver, recarga), las existentes ahora abren primero un jugador desde el listado. Total 80.
+
 ## 0.1.2
 - `manifest.webmanifest` + `apple-touch-icon` (180), `icon-192/512`, `icon-maskable-512` (opacos, fondo #0d0f14, generados de `assets/logo.png`); meta `theme-color`, `apple-mobile-web-app-*`, `viewport-fit=cover`. iOS ignora los íconos del manifest y usa apple-touch-icon.
 - Presentación: barra inferior reestructurada (`.pres-tools` / `.pres-arrows`), media queries ≤760 px y landscape bajo, safe-area insets, swipe táctil, botón Fullscreen oculto en `(hover:none)`.

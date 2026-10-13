@@ -35,7 +35,9 @@ El panel muestra cuántas listas llevan y cuándo se borra cada torneo. *Mine on
 ![Editar torneo](screenshots/07-edit-desktop.png)
 
 ### 5. Presentar y grabar
-Pulsa **Present**. Solo se muestran los jugadores que enviaron lista.
+Pulsa **Present**. Primero verás el **listado por posiciones** con el nombre y el deck de cada jugador (los que no enviaron lista salen atenuados). Haz clic en un jugador para mostrar su decklist; con **List (L)** vuelves al listado.
+
+![Listado](screenshots/10-present-standings.png)
 
 | Tecla | Acción |
 |---|---|
@@ -43,7 +45,8 @@ Pulsa **Present**. Solo se muestran los jugadores que enviaron lista.
 | ← / Av Pág | Anterior |
 | F | Pantalla completa |
 | Z | Ampliar la imagen (otra vez, o Esc, para cerrar) |
-| Esc | Salir (si no estás en pantalla completa) |
+| L | Volver al listado |
+| Esc | Cierra la imagen ampliada; luego vuelve al listado; en el listado, sale (si no estás en pantalla completa) |
 
 Los botones se ocultan solos en pantalla completa si no mueves el mouse. Las imágenes se precargan; si una tarda, verás "Loading photo…".
 

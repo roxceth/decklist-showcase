@@ -38,6 +38,12 @@ async function noHorizontalOverflow(page, label) {
 }
 const shot = (page, name, full = true) => page.screenshot({ path: path.join(SHOTS, name + '.png'), fullPage: full });
 
+// The presentation opens on the standings list; this clicks the first player that has a list.
+async function openFirst(page) {
+  await page.locator('.standings').waitFor();
+  await page.locator('button.sl-row').first().click();
+}
+
 async function login(page, name = 'Hector D.', pass = PW) {
   await page.goto(srv.base + '/#/');
   await page.getByLabel('Name').fill(name);
@@ -381,6 +387,7 @@ test('presentation: slides for text, image and link; keyboard; zoom; no horizont
   const page = await newPage({ viewport: { width: 1280, height: 720 } });
   await login(page);
   await page.goto(srv.base + '/#/present/' + s.eventId);
+  await openFirst(page);
   await page.locator('.pres-name').waitFor();
   const names = [];
   const count = Number((await page.locator('.count').textContent()).split('/')[1]);
@@ -419,7 +426,9 @@ test('presentation: slides for text, image and link; keyboard; zoom; no horizont
   await page.keyboard.press('Home');
   assert.equal(await page.locator('.count').textContent(), '1 / 4');
   await noHorizontalOverflow(page, 'present');
-  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape'); // slide -> back to the list
+  await page.locator('.standings').waitFor();
+  await page.keyboard.press('Escape'); // list -> leaves the presentation
   await page.getByRole('heading', { name: 'Your tournaments' }).waitFor();
   await page.context().close();
 });
@@ -429,6 +438,7 @@ for (const [label, vp] of [['portrait 390x664', { width: 390, height: 664 }], ['
     const page = await newPage({ viewport: vp, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     await login(page);
     await page.goto(srv.base + '/#/present/' + s.eventId);
+    await openFirst(page);
     await page.locator('.pres-name').waitFor();
     const m = await page.evaluate(() => {
       const vw = innerWidth, vh = innerHeight;
@@ -448,11 +458,44 @@ for (const [label, vp] of [['portrait 390x664', { width: 390, height: 664 }], ['
   });
 }
 
+test('presentation opens on the standings list: names, decks, order; pick a player; back to the list', async () => {
+  const page = await newPage({ viewport: { width: 1280, height: 720 } });
+  await login(page);
+  await page.goto(srv.base + '/#/present/' + s.eventId);
+  await page.locator('.standings').waitFor();
+  const rows = await page.locator('.sl-row').evaluateAll((els) => els.map((e) => ({
+    rank: e.querySelector('.sl-rank').textContent, name: e.querySelector('.sl-name').textContent,
+    deck: e.querySelector('.sl-deck').textContent.trim(), clickable: e.tagName === 'BUTTON', none: e.classList.contains('none')
+  })));
+  assert.ok(rows.length >= 4);
+  assert.deepEqual(rows.map((r) => Number(r.rank)), rows.map((r) => Number(r.rank)).slice().sort((a, b) => a - b), 'ordered by position');
+  assert.ok(rows.every((r) => r.none ? (!r.clickable && /No list yet/.test(r.deck)) : (r.clickable && r.deck.length > 0)), 'players with a list are clickable, others are greyed out');
+  const m = await page.evaluate(() => { const st = document.querySelector('.standings').getBoundingClientRect(); const last = [...document.querySelectorAll('.sl-row')].pop().getBoundingClientRect(); return { stBottom: st.bottom, lastBottom: last.bottom, vh: innerHeight, sw: document.documentElement.scrollWidth, vw: innerWidth }; });
+  assert.ok(m.lastBottom <= m.vh && m.sw === m.vw, 'list fits on one screen');
+  await shot(page, '10-present-standings', false);
+  // pick the second clickable player
+  const target = page.locator('button.sl-row').nth(1);
+  const want = await target.locator('.sl-name').textContent();
+  await target.click();
+  await page.locator('.pres-name').waitFor();
+  assert.equal(await page.locator('.pres-name').textContent(), want);
+  await page.getByRole('button', { name: 'List (L)' }).click();
+  await page.locator('.standings').waitFor();
+  await page.locator('button.sl-row').nth(1).click();
+  await page.keyboard.press('l');
+  await page.locator('.standings').waitFor();
+  // Reload on the list stays on the list
+  await page.keyboard.press('r');
+  await page.locator('.standings').waitFor();
+  await page.context().close();
+});
+
 test('presentation with a long deck (30 different cards) uses 3 columns and stays inside the panel', async () => {
   const { eventId } = await seedBig();
   const page = await newPage({ viewport: { width: 1280, height: 720 } });
   await login(page);
   await page.goto(srv.base + '/#/present/' + eventId);
+  await openFirst(page);
   await page.locator('.cardlist').waitFor();
   const cols = await page.locator('.cardlist').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
   assert.equal(cols, 3);
@@ -504,6 +547,7 @@ test('XSS: names, deck names and list text with HTML never execute, on every scr
     await page.goto(srv.base + '/' + hash);
     await page.waitForTimeout(600);
   }
+  await openFirst(page);
   await page.locator('.pres-name').waitFor();
   assert.match(await page.locator('.pres-name').textContent(), /<img src=x/, 'shown as text');
   assert.equal(await page.evaluate(() => window.__pwned), undefined);
@@ -595,6 +639,7 @@ test('branding and refresh buttons: name, logo fallback, dashboard / edit / play
   const g = srv.gas;
   g.post({ action: 'submitDeck', eventId: ev, playerId: ps[0].playerId, secret: 'Q'.repeat(32), type: 'txt', deckColor: 'Red', content: '// Main deck\n4 x AAA-1' });
   await page.goto(srv.base + '/#/present/' + ev);
+  await openFirst(page);
   await page.locator('.pres-name').waitFor();
   assert.equal(await page.locator('.count').textContent(), '1 / 1');
   g.post({ action: 'submitDeck', eventId: ev, playerId: ps[1].playerId, secret: 'R'.repeat(32), type: 'link', deckColor: 'Blue', content: 'https://exburst.dev/ua/en/deck/9' });

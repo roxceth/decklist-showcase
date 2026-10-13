@@ -264,3 +264,29 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
   .nav .round { width: 40px; height: 40px; }
   .nav .count { font-size: 18px; }
 }
+
+/* ---- presentation: standings list ---- */
+.standings { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-template-columns: repeat(var(--scols, 1), minmax(0, 1fr)); grid-template-rows: repeat(var(--rows, 1), minmax(0, 9.5vh)); column-gap: 2.4vw; row-gap: 1vh; align-content: start; font-size: min(3.6vh, calc(66vh / var(--rows) / 1.9)); }
+.sl-row { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 0.8em; padding: 0 0.9em; min-height: 0; border: 1px solid var(--line); border-radius: 0.6em; background: var(--card); cursor: pointer; font-family: var(--font-head); overflow: hidden; }
+.sl-row:hover, .sl-row:focus-visible { border-color: var(--gold); outline: none; }
+.sl-row.none { opacity: 0.45; cursor: default; }
+.sl-rank { flex: none; min-width: 1.8em; height: 1.8em; border-radius: 0.45em; background: var(--gold); color: #0d0f14; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1em; }
+.sl-row.none .sl-rank { background: #2a2f3d; color: var(--muted); }
+.sl-who { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 0.6em; }
+.sl-name { font-weight: 700; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sl-rec { color: var(--muted); font-size: 0.8em; white-space: nowrap; }
+.sl-deck { flex: none; max-width: 52%; display: flex; align-items: center; gap: 0.5em; font-size: 0.95em; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.sl-deck > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.sl-none { color: var(--muted); font-style: italic; font-weight: 500; }
+@media (max-width: 760px) {
+  .standings { display: flex; flex-direction: column; overflow: auto; font-size: 17px; gap: 8px; }
+  .sl-row { min-height: 56px; flex: none; }
+  .sl-deck { max-width: 45%; }
+}
+
+/* Several columns: the deck goes under the name so long names are not cut. */
+.standings.multi { font-size: min(3.2vh, calc(62vh / var(--rows) / 1.9)); }
+.standings.multi .sl-row { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "rank who" "rank deck"; column-gap: 0.8em; row-gap: 0; align-content: center; }
+.standings.multi .sl-rank { grid-area: rank; }
+.standings.multi .sl-who { grid-area: who; }
+.standings.multi .sl-deck { grid-area: deck; max-width: none; font-size: 0.8em; color: var(--muted); font-weight: 500; }

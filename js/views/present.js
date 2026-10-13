@@ -13,7 +13,8 @@ export function columnsFor(n) {
   return n <= 18 ? 2 : n <= 39 ? 3 : 4;
 }
 
-export async function presentView(eventId, startIndex = 0) {
+// startIndex < 0 opens the standings list; >= 0 opens that player's slide directly.
+export async function presentView(eventId, startIndex = -1) {
   let alive = true;
   onLeave(() => { alive = false; document.body.classList.remove('presenting'); });
   const shell = h('div', { class: 'shell' }, h('main', { class: 'page' }, spinner('Loading lists...')));
@@ -44,9 +45,12 @@ export async function presentView(eventId, startIndex = 0) {
     return;
   }
 
+  let view = startIndex >= 0 ? 'slide' : 'list';
   let i = Math.min(Math.max(0, startIndex), slides.length - 1);
   let zoom = null;
   const photos = new Map(); // deckId -> {state:'loading'|'ready'|'error', url, promise}
+
+  function onSlide(deckId) { return view === 'slide' && slides[i] && slides[i].deck.deckId === deckId; }
 
   function ensurePhoto(deckId) {
     let p = photos.get(deckId);
@@ -58,18 +62,18 @@ export async function presentView(eventId, startIndex = 0) {
         if (!/^image\/(jpeg|png|webp)$/.test(r.mime)) throw new Error('Unexpected image type');
         p.url = b64ToUrl(r.mime, r.base64);
         p.state = 'ready';
-        if (alive && slides[i] && slides[i].deck.deckId === deckId) render();
+        if (alive && onSlide(deckId)) render();
       },
       () => {
         p.state = 'error';
-        if (alive && slides[i] && slides[i].deck.deckId === deckId) render();
+        if (alive && onSlide(deckId)) render();
       }
     );
     return p;
   }
   function prefetch() {
     let found = 0;
-    for (let k = i; k < slides.length && found < 3; k++) {
+    for (let k = view === 'slide' ? i : 0; k < slides.length && found < 3; k++) {
       if (slides[k].deck.type === 'photo') {
         ensurePhoto(slides[k].deck.deckId);
         found++;
@@ -123,7 +127,40 @@ export async function presentView(eventId, startIndex = 0) {
     };
   }
 
+  function renderList() {
+    const n = data.entries.length;
+    const cols = n <= 8 ? 1 : n <= 16 ? 2 : 3;
+    const rows = Math.ceil(n / cols);
+    const items = data.entries.map((e) => {
+      const d = e.deck;
+      const inner = [
+        h('span', { class: 'sl-rank', text: String(e.rank) }),
+        h('span', { class: 'sl-who' },
+          h('span', { class: 'sl-name', text: e.name }),
+          e.record ? h('span', { class: 'sl-rec', text: e.record }) : null),
+        h('span', { class: 'sl-deck' },
+          d ? [h('span', { class: 'dot ' + d.deckColor }), h('span', { text: d.deckName || d.deckColor })] : h('span', { class: 'sl-none', text: 'No list yet' }))
+      ];
+      if (!d) return h('div', { class: 'sl-row none' }, inner);
+      const idx = slides.indexOf(e);
+      return h('button', { class: 'sl-row', type: 'button', 'aria-label': 'Show the decklist of ' + e.name, onclick: () => { view = 'slide'; i = idx; render(); } }, inner);
+    });
+    root.replaceChildren(
+      h('div', { class: 'pres-top' },
+        h('span', { class: 'ev', text: evName + ' · ' + shortDate(evDate) }),
+        h('span', { class: 'app', text: 'Standings' })),
+      h('div', { class: 'standings' + (cols > 1 ? ' multi' : ''), style: '--rows:' + rows + ';--scols:' + cols }, items),
+      h('div', { class: 'pres-bottom' },
+        h('div', { class: 'stack pres-dots' }, h('span', { class: 'hint', text: 'Click a player to show their decklist' + (missing ? ' · ' + missing + (missing === 1 ? ' player has' : ' players have') + ' no list' : '') })),
+        h('div', { class: 'nav' },
+          h('div', { class: 'pres-tools tools' },
+            h('button', { class: 'btn small', type: 'button', onclick: exit }, 'Exit'),
+            h('button', { class: 'btn small', type: 'button', onclick: reload }, 'Reload (R)'),
+            h('button', { class: 'btn small fs-btn', type: 'button', onclick: toggleFullscreen }, 'Fullscreen (F)')))));
+  }
+
   function render() {
+    if (view === 'list') { renderList(); return; }
     const e = slides[i];
     const d = e.deck;
     const panel = d.type === 'txt' ? textPanel(e) : d.type === 'photo' ? photoPanel(e) : linkPanel(e);
@@ -149,6 +186,7 @@ export async function presentView(eventId, startIndex = 0) {
         h('div', { class: 'nav' },
           h('div', { class: 'pres-tools tools' },
             h('button', { class: 'btn small', type: 'button', onclick: exit }, 'Exit'),
+            h('button', { class: 'btn small', type: 'button', onclick: showList }, 'List (L)'),
             h('button', { class: 'btn small', type: 'button', onclick: reload }, 'Reload (R)'),
             h('button', { class: 'btn small fs-btn', type: 'button', onclick: toggleFullscreen }, 'Fullscreen (F)')),
           h('div', { class: 'pres-arrows' },
@@ -165,7 +203,15 @@ export async function presentView(eventId, startIndex = 0) {
     return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m[2]) - 1] + ' ' + Number(m[3]);
   }
 
+  function showList() {
+    zoom = null;
+    document.querySelector('.pres-zoom')?.remove();
+    view = 'list';
+    render();
+  }
+
   function go(delta) {
+    if (view !== 'slide') return;
     const n = Math.min(slides.length - 1, Math.max(0, i + delta));
     if (n === i) return;
     i = n;
@@ -195,7 +241,7 @@ export async function presentView(eventId, startIndex = 0) {
   }
   // Fetches the lists again (players may have sent more while presenting) and keeps the current slide.
   function reload() {
-    const keep = i;
+    const keep = view === 'list' ? -1 : i;
     runLeave();
     presentView(eventId, keep);
   }
@@ -210,12 +256,13 @@ export async function presentView(eventId, startIndex = 0) {
     switch (ev.key) {
       case 'ArrowRight': case 'PageDown': case ' ': ev.preventDefault(); go(1); break;
       case 'ArrowLeft': case 'PageUp': ev.preventDefault(); go(-1); break;
-      case 'Home': i = 0; render(); break;
-      case 'End': i = slides.length - 1; render(); break;
+      case 'Home': if (view === 'slide') { i = 0; render(); } break;
+      case 'End': if (view === 'slide') { i = slides.length - 1; render(); } break;
+      case 'l': case 'L': if (view === 'slide') showList(); break;
       case 'f': case 'F': toggleFullscreen(); break;
-      case 'z': case 'Z': toggleZoom(); break;
+      case 'z': case 'Z': if (view === 'slide') toggleZoom(); break;
       case 'r': case 'R': reload(); break;
-      case 'Escape': if (zoom) toggleZoom(); else if (!document.fullscreenElement) exit(); break;
+      case 'Escape': if (zoom) toggleZoom(); else if (view === 'slide') showList(); else if (!document.fullscreenElement) exit(); break;
       default: return;
     }
   }

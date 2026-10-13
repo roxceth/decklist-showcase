@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+- **Presentación con listado por posiciones**: al presentar, ahora se abre primero una pantalla con todos los jugadores en orden de posición, con su nombre, récord y el deck que usaron (color y nombre). Tú eliges a quién mostrar: haces clic en un jugador y se abre su decklist. Con el botón **List (L)** o la tecla **L** (o **Esc**) vuelves al listado; **Esc** otra vez sale de la presentación. Las flechas siguen pasando de un jugador a otro.
+- Los jugadores que aún no enviaron lista aparecen atenuados con "No list yet" y no se pueden abrir.
+- Hasta 8 jugadores se muestran en 1 columna, hasta 16 en 2 y más en 3, para que todo quepa en una sola pantalla al grabar. En celular es una lista con scroll.
+
 ## 0.1.2
 - **Presentación en celular**: los botones de abajo (flechas, contador, Exit, Reload) ya no se salen de la pantalla ni quedan tapados. En vertical se apilan (flechas grandes arriba, Exit/Reload abajo); en horizontal todo cabe en una línea. Se puede **deslizar** el dedo a izquierda/derecha para cambiar de jugador. Respeta la barra inferior del iPhone.
 - **Crear torneo en celular**: botones "Create & get link" y "Cancel" a todo el ancho (ya no se parte el texto), campos de 16 px (Safari ya no hace zoom al tocar), selector de fecha uniforme.

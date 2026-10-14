@@ -46,6 +46,7 @@ export async function presentView(eventId, startIndex = -1) {
   }
 
   let view = startIndex >= 0 ? 'slide' : 'list';
+  let showMissing = false; // players without a list stay out of the recorded frame unless the organizer asks
   let i = Math.min(Math.max(0, startIndex), slides.length - 1);
   let zoom = null;
   const photos = new Map(); // deckId -> {state:'loading'|'ready'|'error', url, promise}
@@ -61,14 +62,21 @@ export async function presentView(eventId, startIndex = -1) {
       (r) => {
         if (!/^image\/(jpeg|png|webp)$/.test(r.mime)) throw new Error('Unexpected image type');
         p.url = b64ToUrl(r.mime, r.base64);
-        p.state = 'ready';
-        if (alive && onSlide(deckId)) render();
-      },
-      () => {
-        p.state = 'error';
-        if (alive && onSlide(deckId)) render();
+        // Measure the picture first so the slide can pick the layout that makes it biggest.
+        return new Promise((resolve) => {
+          const probe = new Image();
+          probe.onload = () => { p.ratio = probe.naturalWidth / (probe.naturalHeight || 1); resolve(); };
+          probe.onerror = () => resolve();
+          probe.src = p.url;
+        }).then(() => {
+          p.state = 'ready';
+          if (alive && onSlide(deckId)) render();
+        });
       }
-    );
+    ).catch(() => {
+      p.state = 'error';
+      if (alive && onSlide(deckId)) render();
+    });
     return p;
   }
   function prefetch() {
@@ -122,16 +130,18 @@ export async function presentView(eventId, startIndex = -1) {
       body: h('div', { class: 'pres-linkbox' },
         icon('link'),
         h('h3', { text: 'This list was sent as a link' }),
-        h('p', { class: 'hint', text: 'The list opens on Exburst, outside this page.' }),
+        h('p', { class: 'hint', text: 'The list opens on Exburst in a new tab.' }),
+        h('code', { class: 'link-url', text: e.deck.content }),
         h('a', { class: 'btn primary', href: e.deck.content, target: '_blank', rel: 'noopener noreferrer' }, 'Open on Exburst ', icon('ext')))
     };
   }
 
   function renderList() {
-    const n = data.entries.length;
+    const shown = showMissing ? data.entries : slides;
+    const n = shown.length;
     const cols = n <= 8 ? 1 : n <= 16 ? 2 : 3;
     const rows = Math.ceil(n / cols);
-    const items = data.entries.map((e) => {
+    const items = shown.map((e) => {
       const d = e.deck;
       const inner = [
         h('span', { class: 'sl-rank', text: String(e.rank) }),
@@ -151,10 +161,11 @@ export async function presentView(eventId, startIndex = -1) {
         h('span', { class: 'app', text: 'Standings' })),
       h('div', { class: 'standings' + (cols > 1 ? ' multi' : ''), style: '--rows:' + rows + ';--scols:' + cols }, items),
       h('div', { class: 'pres-bottom' },
-        h('div', { class: 'stack pres-dots' }, h('span', { class: 'hint', text: 'Click a player to show their decklist' + (missing ? ' · ' + missing + (missing === 1 ? ' player has' : ' players have') + ' no list' : '') })),
+        h('div', { class: 'stack pres-dots' }, h('span', { class: 'hint', text: 'Click a player to show their decklist' })),
         h('div', { class: 'nav' },
           h('div', { class: 'pres-tools tools' },
             h('button', { class: 'btn small', type: 'button', onclick: exit }, 'Exit'),
+            missing ? h('button', { class: 'btn small', type: 'button', 'aria-pressed': showMissing ? 'true' : 'false', onclick: () => { showMissing = !showMissing; render(); } }, (showMissing ? 'Hide' : 'Show') + ' without list (' + missing + ')') : null,
             h('button', { class: 'btn small', type: 'button', onclick: reload }, 'Reload (R)'),
             h('button', { class: 'btn small fs-btn', type: 'button', onclick: toggleFullscreen }, 'Fullscreen (F)')))));
   }
@@ -171,7 +182,7 @@ export async function presentView(eventId, startIndex = -1) {
       h('div', { class: 'pres-top' },
         h('span', { class: 'ev', text: evName + ' · ' + shortDate(evDate) }),
         h('span', { class: 'app', text: appName() })),
-      h('div', { class: 'pres-main' },
+      h('div', { class: 'pres-main' + (d.type === 'photo' && photos.get(d.deckId)?.ratio >= 1.2 ? ' wide' : '') },
         h('div', { class: 'pres-info' },
           h('div', { class: 'pres-place' },
             h('div', { class: 'pres-rank', text: String(e.rank) }),
@@ -182,7 +193,7 @@ export async function presentView(eventId, startIndex = -1) {
           h('div', { class: 'pres-panel-head' }, h('h2', { text: 'DECKLIST' }), h('span', { text: panel.meta })),
           panel.body)),
       h('div', { class: 'pres-bottom' },
-        h('div', { class: 'stack pres-dots' }, dots, missing ? h('span', { class: 'hint', text: missing + (missing === 1 ? ' player has' : ' players have') + ' no list' }) : null),
+        h('div', { class: 'stack pres-dots' }, dots),
         h('div', { class: 'nav' },
           h('div', { class: 'pres-tools tools' },
             h('button', { class: 'btn small', type: 'button', onclick: exit }, 'Exit'),
@@ -225,7 +236,9 @@ export async function presentView(eventId, startIndex = -1) {
     const e = slides[i];
     const p = e.deck.type === 'photo' ? photos.get(e.deck.deckId) : null;
     if (!p || p.state !== 'ready') { zoom = null; return; }
-    const z = h('div', { class: 'pres-zoom', onclick: () => toggleZoom() }, h('img', { src: p.url, alt: 'Decklist image, full size' }));
+    const z = h('div', { class: 'pres-zoom', onclick: () => toggleZoom() },
+      h('img', { src: p.url, alt: 'Decklist image, full size' }),
+      h('div', { class: 'zoom-cap', text: e.rank + ' · ' + e.name + (e.deck.deckName ? ' · ' + e.deck.deckName : '') }));
     document.body.append(z);
   }
   function toggleZoom() {

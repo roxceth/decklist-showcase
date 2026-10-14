@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.4
+Cambios a partir de una revisión de diseño.
+- **Corregido:** la pantalla del jugador mostraba la palabra "null" encima de "Find your name" en torneos abiertos. Ya no aparece (tampoco tras Refresh).
+- **Presentación:** el listado ya no muestra a los jugadores sin lista (ni el conteo "N players have no list") en el cuadro grabado. Hay un botón **Show without list (N)** en la barra de abajo, solo para ti, para verlos atenuados y volver a ocultarlos.
+- **Presentación, imágenes:** si la imagen es horizontal, usa casi todo el ancho de la pantalla y los datos del jugador pasan a una franja arriba. Al ampliar con **Z** ahora se ve el nombre del jugador.
+- **Presentación, links:** la diapositiva muestra el link como texto y avisa que abre Exburst en una pestaña nueva (la presentación no se cierra).
+- **Accesibilidad:** el foco del teclado en el listado ahora es un contorno visible; mejor contraste en los placeholders y en las filas sin lista; botones pequeños de 44 px en pantallas táctiles; títulos del panel en orden correcto (h1 > h2).
+- Si una foto no se puede cargar, ahora muestra "Try again" (antes podía quedarse en "Loading photo…").
+
 ## 0.1.3
 - **Presentación con listado por posiciones**: al presentar, ahora se abre primero una pantalla con todos los jugadores en orden de posición, con su nombre, récord y el deck que usaron (color y nombre). Tú eliges a quién mostrar: haces clic en un jugador y se abre su decklist. Con el botón **List (L)** o la tecla **L** (o **Esc**) vuelves al listado; **Esc** otra vez sale de la presentación. Las flechas siguen pasando de un jugador a otro.
 - Los jugadores que aún no enviaron lista aparecen atenuados con "No list yet" y no se pueden abrir.

@@ -35,7 +35,7 @@ export async function dashboardView() {
     const shown = events.filter((e) => filter === 'all' || (me && e.createdBy === me.id));
     if (!shown.length) {
       list.replaceChildren(h('div', { class: 'card' },
-        h('h3', { class: 'sec', text: events.length ? 'Nothing here yet' : 'No tournaments yet' }),
+        h('h2', { class: 'sec', text: events.length ? 'Nothing here yet' : 'No tournaments yet' }),
         h('p', { class: 'subtitle', text: events.length ? 'You have not created any tournament.' : 'Create one, paste the results and share the link with the players.' }),
         h('div', null, h('a', { class: 'btn primary', href: '#/new' }, icon('plus'), 'New tournament'))));
       return;
@@ -48,7 +48,7 @@ export async function dashboardView() {
     const pct = e.playerCount ? Math.round((e.submittedCount / e.playerCount) * 100) : 0;
     return h('article', { class: 'card ev' },
       h('div', { class: 'row between', style: 'align-items:flex-start;flex-wrap:nowrap' },
-        h('h3', { text: e.name }), h('span', { class: status[1], text: status[0] })),
+        h('h2', { text: e.name }), h('span', { class: status[1], text: status[0] })),
       h('div', null,
         h('div', { class: 'meta', text: formatDate(e.datePlayed) + ' · ' + plural(e.playerCount, 'player', 'players') }),
         h('div', { class: 'meta', text: 'Created by ' + e.createdByName })),

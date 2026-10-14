@@ -1,5 +1,11 @@
 # Technical changelog
 
+## 0.1.4
+- `player.js`: `draw()`/`drawPicker()` devuelven arrays con `null`; `replaceChildren(...arr)` convertía `null` en el texto "null". Ahora `.filter(Boolean)` en las 7 llamadas.
+- `present.js`: `showMissing` (oculto por defecto); `ensurePhoto` mide la proporción (`p.ratio`) antes de pintar y usa `.pres-main.wide` si ratio >= 1.2; `.catch` encadenado (el `throw` por MIME inválido no llegaba al manejador de error del mismo `.then`); caption en `.pres-zoom`; la diapositiva de link muestra `.link-url`.
+- CSS: `.sl-row:focus-visible` con outline 3 px; placeholder `#858ea3`; `.sl-row.none` sin opacity; `@media (pointer: coarse) { .btn.small { min-height: 44px } }`; `.ev h2`.
+- Pruebas e2e: listado con toggle y contraste, "null", títulos y tamaños táctiles, imagen ancha/alta con zoom. Total 83. La prueba de "null" se verificó fallando sin el arreglo.
+
 ## 0.1.3
 - `presentView(eventId, startIndex = -1)`: `view` = `list` | `slide`; `renderList()` pinta todos los `entries` (no solo los que tienen deck); `showList()`; teclas L / Esc (slide -> list -> salir); Home/End/Z/flechas solo en slide; Reload conserva la vista. CSS `.standings` (grid por columnas, `.multi` apila el deck bajo el nombre).
 - Pruebas e2e: +1 (listado: orden, clic, volver, recarga), las existentes ahora abren primero un jugador desde el listado. Total 80.

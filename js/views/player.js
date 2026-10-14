@@ -45,7 +45,7 @@ export async function playerView(eventId) {
   // Manual refresh only (no polling, to keep the number of Apps Script calls low).
   async function refresh() {
     await load();
-    root.replaceChildren(...draw());
+    root.replaceChildren(...draw().filter(Boolean));
   }
 
   function draw() {
@@ -60,7 +60,7 @@ export async function playerView(eventId) {
     const rows = data.players.map((p) => {
       let right;
       if (p.state === 'open' && ev.status === 'open') {
-        right = h('button', { class: 'btn primary', style: 'font-size:16px;min-height:44px;padding:0 16px', type: 'button', onclick: () => root.replaceChildren(...drawPicker(p)) }, "That's me");
+        right = h('button', { class: 'btn primary', style: 'font-size:16px;min-height:44px;padding:0 16px', type: 'button', onclick: () => root.replaceChildren(...drawPicker(p).filter(Boolean)) }, "That's me");
       } else if (p.state === 'open') {
         right = h('span', { class: 'claim-state', text: 'Not claimed' });
       } else {
@@ -93,7 +93,7 @@ export async function playerView(eventId) {
       try {
         await call('claimPlayer', { eventId, playerId: p.playerId, secret: getSecret(eventId, true) });
         await load();
-        root.replaceChildren(...draw());
+        root.replaceChildren(...draw().filter(Boolean));
       } catch (err) {
         msg.replaceChildren(errorBanner(err));
         setBusy(yes, false);
@@ -111,7 +111,7 @@ export async function playerView(eventId) {
           h('div', { class: 'nm' }, p.name, h('small', { text: ordinal(p.rank) + ' place' + (p.record ? ' · ' + p.record + ' record' : '') }))),
         h('p', { class: 'hint', text: 'You can only claim one name on this device. If you pick the wrong one, the organizer can release it.' }),
         msg, yes,
-        h('button', { class: 'btn block', type: 'button', onclick: () => root.replaceChildren(...drawPicker()) }, 'Not me, go back'))
+        h('button', { class: 'btn block', type: 'button', onclick: () => root.replaceChildren(...drawPicker().filter(Boolean)) }, 'Not me, go back'))
     ];
   }
 
@@ -257,18 +257,18 @@ export async function playerView(eventId) {
       try {
         await call('submitDeck', body, { timeoutMs: 90000 });
         await load();
-        root.replaceChildren(...draw());
+        root.replaceChildren(...draw().filter(Boolean));
         toast('List sent');
       } catch (err) {
         msg.replaceChildren(errorBanner(err));
         setBusy(send, false);
         if (err.code === 'locked_list' || err.code === 'forbidden') {
-          try { await load(); root.replaceChildren(...draw()); } catch (e2) { /* keep message */ }
+          try { await load(); root.replaceChildren(...draw().filter(Boolean)); } catch (e2) { /* keep message */ }
         }
       }
     });
     return [form, footer()];
   }
 
-  root.replaceChildren(...draw());
+  root.replaceChildren(...draw().filter(Boolean));
 }

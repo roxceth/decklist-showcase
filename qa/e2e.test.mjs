@@ -458,36 +458,112 @@ for (const [label, vp] of [['portrait 390x664', { width: 390, height: 664 }], ['
   });
 }
 
-test('presentation opens on the standings list: names, decks, order; pick a player; back to the list', async () => {
+test('presentation opens on the standings list: names, decks, order; players without list hidden until asked; pick a player; back', async () => {
   const page = await newPage({ viewport: { width: 1280, height: 720 } });
   await login(page);
   await page.goto(srv.base + '/#/present/' + s.eventId);
   await page.locator('.standings').waitFor();
-  const rows = await page.locator('.sl-row').evaluateAll((els) => els.map((e) => ({
+  const read = () => page.locator('.sl-row').evaluateAll((els) => els.map((e) => ({
     rank: e.querySelector('.sl-rank').textContent, name: e.querySelector('.sl-name').textContent,
     deck: e.querySelector('.sl-deck').textContent.trim(), clickable: e.tagName === 'BUTTON', none: e.classList.contains('none')
   })));
-  assert.ok(rows.length >= 4);
+  let rows = await read();
+  assert.ok(rows.length >= 3);
+  assert.ok(rows.every((r) => r.clickable && !r.none && r.deck.length > 0), 'by default only players with a list are shown');
+  assert.equal(await page.getByText(/no list yet/i).count(), 0, 'nothing about missing lists in the recorded frame');
+  assert.equal(await page.getByText(/players? ha(s|ve) no list/).count(), 0);
   assert.deepEqual(rows.map((r) => Number(r.rank)), rows.map((r) => Number(r.rank)).slice().sort((a, b) => a - b), 'ordered by position');
-  assert.ok(rows.every((r) => r.none ? (!r.clickable && /No list yet/.test(r.deck)) : (r.clickable && r.deck.length > 0)), 'players with a list are clickable, others are greyed out');
-  const m = await page.evaluate(() => { const st = document.querySelector('.standings').getBoundingClientRect(); const last = [...document.querySelectorAll('.sl-row')].pop().getBoundingClientRect(); return { stBottom: st.bottom, lastBottom: last.bottom, vh: innerHeight, sw: document.documentElement.scrollWidth, vw: innerWidth }; });
+  const m = await page.evaluate(() => { const last = [...document.querySelectorAll('.sl-row')].pop().getBoundingClientRect(); return { lastBottom: last.bottom, vh: innerHeight, sw: document.documentElement.scrollWidth, vw: innerWidth }; });
   assert.ok(m.lastBottom <= m.vh && m.sw === m.vw, 'list fits on one screen');
   await shot(page, '10-present-standings', false);
-  // pick the second clickable player
+  // organizer toggle shows everyone, the missing ones greyed and not clickable
+  const toggle = page.getByRole('button', { name: /Show without list \(\d+\)/ });
+  await toggle.click();
+  rows = await read();
+  assert.ok(rows.some((r) => r.none && !r.clickable && /No list yet/.test(r.deck)));
+  assert.ok(rows.every((r) => r.none ? !r.clickable : r.clickable));
+  const contrast = await page.evaluate(() => {
+    const lum = (c) => { const [r, g, b] = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const el = document.querySelector('.sl-row.none .sl-deck span');
+    const bg = getComputedStyle(document.body).backgroundColor;
+    const fg = getComputedStyle(el).color;
+    const [a, b] = [lum(fg), lum(bg)].sort((x, y) => y - x);
+    return (a + 0.05) / (b + 0.05);
+  });
+  assert.ok(contrast >= 4.5, 'greyed rows stay readable: ' + contrast.toFixed(2));
+  await page.getByRole('button', { name: /Hide without list/ }).click();
+  assert.equal(await page.locator('.sl-row.none').count(), 0);
+  // pick the second player
   const target = page.locator('button.sl-row').nth(1);
   const want = await target.locator('.sl-name').textContent();
   await target.click();
   await page.locator('.pres-name').waitFor();
   assert.equal(await page.locator('.pres-name').textContent(), want);
+  assert.equal(await page.getByText(/no list/i).count(), 0, 'slides do not mention missing lists either');
   await page.getByRole('button', { name: 'List (L)' }).click();
   await page.locator('.standings').waitFor();
   await page.locator('button.sl-row').nth(1).click();
   await page.keyboard.press('l');
   await page.locator('.standings').waitFor();
-  // Reload on the list stays on the list
   await page.keyboard.press('r');
   await page.locator('.standings').waitFor();
+  // keyboard focus on a row is clearly visible (not just a border tint)
+  await page.keyboard.press('Tab');
+  const focus = await page.evaluate(() => { const el = document.activeElement; const cs = getComputedStyle(el); return { cls: el.className, w: parseFloat(cs.outlineWidth), style: cs.outlineStyle }; });
+  assert.ok(/sl-row|btn/.test(focus.cls) && focus.style !== 'none' && focus.w >= 2, 'visible focus outline: ' + JSON.stringify(focus));
   await page.context().close();
+});
+
+test('player first screen never shows the text "null" (open and closed tournaments)', async () => {
+  const page = await newPage(MOBILE);
+  await page.goto(srv.base + '/#/e/' + s.eventId);
+  await page.getByRole('heading', { name: 'Find your name' }).waitFor();
+  assert.ok(!/\bnull\b|undefined/.test(await page.locator('body').innerText()), 'no stray null/undefined text');
+  await page.getByRole('button', { name: /Refresh/ }).click();
+  await page.getByRole('heading', { name: 'Find your name' }).waitFor();
+  assert.ok(!/\bnull\b|undefined/.test(await page.locator('body').innerText()), 'still clean after Refresh');
+  await page.context().close();
+});
+
+test('dashboard headings do not skip a level and small buttons are 44 px on touch screens', async () => {
+  const page = await newPage(MOBILE);
+  await login(page);
+  const levels = await page.locator('h1,h2,h3,h4').evaluateAll((els) => els.map((e) => Number(e.tagName[1])));
+  for (let k = 1; k < levels.length; k++) assert.ok(levels[k] - levels[k - 1] <= 1, 'heading order ' + levels.join(','));
+  const hs = await page.locator('.btn.small').evaluateAll((els) => els.filter((e) => e.offsetParent).map((e) => e.getBoundingClientRect().height));
+  assert.ok(hs.length > 0 && hs.every((x) => x >= 43.5), 'touch targets: ' + hs);
+  await page.context().close();
+});
+
+test('presentation: a wide image gets the whole stage, a tall one keeps the side layout; zoom keeps the player name', async () => {
+  const t = srv.gas.post({ action: 'login', name: 'Hector D.', password: PW }).data.token;
+  const ev = srv.gas.post({ action: 'createEvent', token: t, name: 'Photo Cup', datePlayed: '2026-10-13', expireDays: 14, resultsText: '1 Wide Wanda 3-0\n2 Tall Tim 2-1' }).data.eventId;
+  const ps = srv.gas.post({ action: 'getEvent', eventId: ev }).data.players;
+  const send = (k, file, secret) => {
+    srv.gas.post({ action: 'claimPlayer', eventId: ev, playerId: ps[k].playerId, secret });
+    const r = srv.gas.post({ action: 'submitDeck', eventId: ev, playerId: ps[k].playerId, secret, type: 'photo', deckColor: 'Blue', content: fs.readFileSync(file).toString('base64'), mimeType: 'image/png' });
+    assert.ok(r.ok, JSON.stringify(r));
+  };
+  send(0, path.join(here, 'fixtures', 'deck-image-wide.png'), 'W'.repeat(32));
+  send(1, FIXTURE, 'T'.repeat(32));
+  const page = await newPage({ viewport: { width: 1280, height: 720 } });
+  await login(page);
+  await page.goto(srv.base + '/#/present/' + ev);
+  await page.locator('.standings').waitFor();
+  await page.locator('button.sl-row', { hasText: 'Wide Wanda' }).click();
+  await page.locator('.pres-photo img').waitFor();
+  assert.equal(await page.locator('.pres-main.wide').count(), 1, 'wide image -> info strip on top');
+  const wide = await page.locator('.pres-photo img').boundingBox();
+  assert.ok(wide.width > 800, 'wide image uses the stage: ' + Math.round(wide.width) + ' px');
+  await shot(page, '09c-present-photo-wide', false);
+  await page.keyboard.press('z');
+  assert.match(await page.locator('.zoom-cap').textContent(), /Wide Wanda/);
+  await page.keyboard.press('z');
+  await page.keyboard.press('ArrowRight');
+  await page.locator('.pres-photo img').waitFor();
+  assert.equal(await page.locator('.pres-main.wide').count(), 0, 'tall image keeps the side layout');
+  await page.context().close();
+  srv.gas.post({ action: 'deleteEvent', token: t, eventId: ev });
 });
 
 test('presentation with a long deck (30 different cards) uses 3 columns and stays inside the panel', async () => {

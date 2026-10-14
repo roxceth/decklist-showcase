@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+- **CapyLeague:** los organizadores con sesión iniciada ven un botón **CapyLeague** en la barra de arriba que abre la página de CapyLeague en una pestaña nueva. No aparece en el login ni en la página de los jugadores. El link se cambia (o se quita, dejándolo vacío) en `config.js`, campo `CAPYLEAGUE_URL`.
+- En celular, el texto "Signed in as" de la barra de arriba se oculta para que los botones quepan en una fila.
+
 ## 0.1.5
 - **Listas enviadas como link de Exburst:** ahora la presentación muestra la página de Exburst dentro del slide (a pantalla ancha, con el jugador en una franja arriba), en vez de un botón. Debajo queda "Open on Exburst" por si la página no carga o pide iniciar sesión. Solo se incrusta `https://exburst.dev`. La página incrustada no puede mover ni redirigir tu presentación.
 - Aviso: si una persona usa Exburst con sesión iniciada y tú no, es posible que veas distinto; lo ideal es probar el link antes de grabar. Si haces clic dentro de la página incrustada, el teclado deja de cambiar de slide hasta que pulses un botón de la barra de abajo o fuera del recuadro.

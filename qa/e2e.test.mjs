@@ -756,6 +756,30 @@ test('branding and refresh buttons: name, logo fallback, dashboard / edit / play
   g.post({ action: 'deleteEvent', token: t, eventId: ev });
 });
 
+test('organizers see a CapyLeague link that opens in a new tab; players and signed-out visitors do not', async () => {
+  const page = await newPage();
+  await page.goto(srv.base + '/#/');
+  assert.equal(await page.getByRole('link', { name: /CapyLeague/ }).count(), 0, 'not on the login page');
+  await login(page);
+  const a = page.getByRole('link', { name: /CapyLeague/ });
+  assert.equal(await a.count(), 1);
+  assert.equal(await a.getAttribute('href'), 'https://claude.ai/code/artifact/ee7d650c-ce4c-414a-8a21-d29619bc5ef7');
+  assert.equal(await a.getAttribute('target'), '_blank');
+  assert.match(await a.getAttribute('rel'), /noopener/);
+  const t = srv.gas.post({ action: 'login', name: 'Hector D.', password: PW }).data.token;
+  const ev = srv.gas.post({ action: 'createEvent', token: t, name: 'League Test', datePlayed: '2026-10-13', expireDays: 14, resultsText: '1 Kenji 3-0' }).data.eventId;
+  await page.goto(srv.base + '/#/e/' + ev);
+  await page.getByRole('heading', { name: 'Find your name' }).waitFor();
+  assert.equal(await page.getByRole('link', { name: /CapyLeague/ }).count(), 0, 'not on the player page');
+  srv.gas.post({ action: 'deleteEvent', token: t, eventId: ev });
+  const m = await newPage(MOBILE);
+  await login(m);
+  await noHorizontalOverflow(m, 'dashboard with CapyLeague link');
+  await shot(m, '02b-dashboard-capyleague-mobile', false);
+  await m.context().close();
+  await page.context().close();
+});
+
 test('logo falls back to the built-in icon when the configured file is missing', async () => {
   const page = await newPage();
   await page.route('**/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.DS_CONFIG={API_URL:'/api',APP_NAME:'X Showcase',LOGO_URL:'assets/does-not-exist.png'};" }));

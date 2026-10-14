@@ -1,5 +1,9 @@
 # Technical changelog
 
+## 0.1.6
+- `config.js`: `CAPYLEAGUE_URL` opcional (solo https). `layout.js`: `capyLeagueLink()` en `organizerShell`. La protección real del contenido depende del modo de compartir del artifact, no del login de esta app (la URL está en el código público).
+- Pruebas e2e: +1 (visible solo para organizadores, `target=_blank`, `rel=noopener`). Total 85.
+
 ## 0.1.5
 - `present.js`: `linkPanel` incrusta `<iframe class="embed-frame">` si `embeddable(url)` (https + hostname `exburst.dev`); `sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"` (sin `allow-top-navigation`), `referrerpolicy="no-referrer"`. Fallback de caja con link si el host no es válido. `.pres-main.wide` también para links. No hay forma fiable de detectar el bloqueo X-Frame-Options desde JS, por eso el botón de respaldo siempre está visible.
 - Pruebas e2e: +1 (iframe, sandbox, tamaño, botón de respaldo); `newPage` intercepta `https://exburst.dev/**` con una página falsa. Total 84.

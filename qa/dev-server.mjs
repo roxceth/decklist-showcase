@@ -50,7 +50,7 @@ export async function startDevServer({ port = 0, latencyMs = 0 } = {}) {
     let p = decodeURIComponent(url.pathname);
     if (p === '/config.js') {
       res.writeHead(200, { 'Content-Type': MIME['.js'] });
-      return res.end("window.DS_CONFIG = { API_URL: '/api', APP_NAME: 'CapyBurst Decklist Showcase', LOGO_URL: 'assets/logo.png' };");
+      return res.end("window.DS_CONFIG = { API_URL: '/api', APP_NAME: 'CapyBurst Decklist Showcase', LOGO_URL: 'assets/logo.png', CAPYLEAGUE_URL: 'https://claude.ai/code/artifact/ee7d650c-ce4c-414a-8a21-d29619bc5ef7' };");
     }
     if (p === '/') p = '/index.html';
     const file = path.join(root, p);

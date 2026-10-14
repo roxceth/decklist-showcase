@@ -308,3 +308,5 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 .embed-frame { flex: 1; width: 100%; min-height: 0; border: 0; border-radius: 12px; background: #fff; }
 .embed-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 @media (max-width: 760px) { .embed-frame { min-height: 52dvh; } }
+
+@media (max-width: 640px) { .topbar-right .who { display: none; } }

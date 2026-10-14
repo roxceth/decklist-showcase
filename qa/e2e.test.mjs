@@ -25,6 +25,8 @@ async function newPage(opts = DESKTOP) {
   const ctx = await browser.newContext(opts);
   const page = await ctx.newPage();
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+  // Stand-in for the real Exburst page (the sandbox cannot reach it).
+  await page.route('https://exburst.dev/**', (r) => r.fulfill({ contentType: 'text/html', body: '<!doctype html><body style="font:20px sans-serif;background:#fff;color:#111;padding:24px"><h1>Fake Exburst deck page</h1><p>4 x UE24BT/REZ-1-001</p></body>' }));
   page.on('pageerror', (e) => consoleErrors.push('pageerror: ' + e.message));
   page.on('console', (m) => {
     if (m.type() === 'error' && !/ERR_FAILED|Failed to load resource/.test(m.text())) consoleErrors.push(m.text());
@@ -564,6 +566,31 @@ test('presentation: a wide image gets the whole stage, a tall one keeps the side
   assert.equal(await page.locator('.pres-main.wide').count(), 0, 'tall image keeps the side layout');
   await page.context().close();
   srv.gas.post({ action: 'deleteEvent', token: t, eventId: ev });
+});
+
+test('presentation: an Exburst link is shown live inside the slide (sandboxed), with an open-in-new-tab fallback', async () => {
+  const page = await newPage({ viewport: { width: 1280, height: 720 } });
+  await login(page);
+  await page.goto(srv.base + '/#/present/' + s.eventId);
+  await page.locator('.standings').waitFor();
+  await page.locator('button.sl-row', { hasText: 'Lucia' }).click();
+  const frame = page.locator('iframe.embed-frame');
+  await frame.waitFor();
+  assert.equal(await frame.getAttribute('src'), 'https://exburst.dev/ua/en/deck/132316');
+  const sb = await frame.getAttribute('sandbox');
+  assert.ok(!/allow-top-navigation/.test(sb), 'the embedded page cannot navigate our page: ' + sb);
+  assert.equal(await frame.getAttribute('referrerpolicy'), 'no-referrer');
+  await page.frameLocator('iframe.embed-frame').getByText('Fake Exburst deck page').waitFor();
+  const box = await frame.boundingBox();
+  assert.ok(box.width > 900 && box.height > 380, 'the page gets the stage: ' + JSON.stringify(box));
+  assert.equal(await page.locator('.pres-main.wide').count(), 1);
+  assert.equal(await page.getByRole('link', { name: /Open on Exburst/ }).getAttribute('href'), 'https://exburst.dev/ua/en/deck/132316');
+  await noHorizontalOverflow(page, 'embedded link slide');
+  await shot(page, '10b-present-link-embedded', false);
+  // keyboard still works after the slide changes
+  await page.keyboard.press('ArrowLeft');
+  await page.locator('.pres-name').waitFor();
+  await page.context().close();
 });
 
 test('presentation with a long deck (30 different cards) uses 3 columns and stays inside the panel', async () => {

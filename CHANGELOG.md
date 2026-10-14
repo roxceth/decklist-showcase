@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+- **Listas enviadas como link de Exburst:** ahora la presentación muestra la página de Exburst dentro del slide (a pantalla ancha, con el jugador en una franja arriba), en vez de un botón. Debajo queda "Open on Exburst" por si la página no carga o pide iniciar sesión. Solo se incrusta `https://exburst.dev`. La página incrustada no puede mover ni redirigir tu presentación.
+- Aviso: si una persona usa Exburst con sesión iniciada y tú no, es posible que veas distinto; lo ideal es probar el link antes de grabar. Si haces clic dentro de la página incrustada, el teclado deja de cambiar de slide hasta que pulses un botón de la barra de abajo o fuera del recuadro.
+
 ## 0.1.4
 Cambios a partir de una revisión de diseño.
 - **Corregido:** la pantalla del jugador mostraba la palabra "null" encima de "Find your name" en torneos abiertos. Ya no aparece (tampoco tras Refresh).

@@ -1,5 +1,10 @@
 # Technical changelog
 
+## 0.1.5
+- `present.js`: `linkPanel` incrusta `<iframe class="embed-frame">` si `embeddable(url)` (https + hostname `exburst.dev`); `sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"` (sin `allow-top-navigation`), `referrerpolicy="no-referrer"`. Fallback de caja con link si el host no es válido. `.pres-main.wide` también para links. No hay forma fiable de detectar el bloqueo X-Frame-Options desde JS, por eso el botón de respaldo siempre está visible.
+- Pruebas e2e: +1 (iframe, sandbox, tamaño, botón de respaldo); `newPage` intercepta `https://exburst.dev/**` con una página falsa. Total 84.
+- Probado a mano por el usuario: Exburst permite incrustarse (archivo de prueba aparte).
+
 ## 0.1.4
 - `player.js`: `draw()`/`drawPicker()` devuelven arrays con `null`; `replaceChildren(...arr)` convertía `null` en el texto "null". Ahora `.filter(Boolean)` en las 7 llamadas.
 - `present.js`: `showMissing` (oculto por defecto); `ensurePhoto` mide la proporción (`p.ratio`) antes de pintar y usa `.pres-main.wide` si ratio >= 1.2; `.catch` encadenado (el `throw` por MIME inválido no llegaba al manejador de error del mismo `.then`); caption en `.pres-zoom`; la diapositiva de link muestra `.link-url`.

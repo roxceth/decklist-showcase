@@ -124,15 +124,36 @@ export async function presentView(eventId, startIndex = -1) {
     return { meta: 'Submitted as image · Z to zoom', body };
   }
 
+  // Only real https://exburst.dev pages are ever embedded (the server checks this too).
+  function embeddable(url) {
+    try { const u = new URL(url); return u.protocol === 'https:' && u.hostname === 'exburst.dev'; } catch (err) { return false; }
+  }
+
   function linkPanel(e) {
+    const url = e.deck.content;
+    const openBtn = h('a', { class: 'btn small primary', href: url, target: '_blank', rel: 'noopener noreferrer' }, 'Open on Exburst ', icon('ext'));
+    if (!embeddable(url)) {
+      return {
+        meta: 'Submitted as Exburst link',
+        body: h('div', { class: 'pres-linkbox' },
+          icon('link'),
+          h('h3', { text: 'This list was sent as a link' }),
+          h('p', { class: 'hint', text: 'The list opens on Exburst in a new tab.' }),
+          h('code', { class: 'link-url', text: url }),
+          h('a', { class: 'btn primary', href: url, target: '_blank', rel: 'noopener noreferrer' }, 'Open on Exburst ', icon('ext')))
+      };
+    }
     return {
-      meta: 'Submitted as Exburst link',
-      body: h('div', { class: 'pres-linkbox' },
-        icon('link'),
-        h('h3', { text: 'This list was sent as a link' }),
-        h('p', { class: 'hint', text: 'The list opens on Exburst in a new tab.' }),
-        h('code', { class: 'link-url', text: e.deck.content }),
-        h('a', { class: 'btn primary', href: e.deck.content, target: '_blank', rel: 'noopener noreferrer' }, 'Open on Exburst ', icon('ext')))
+      meta: 'Exburst link · live page',
+      body: h('div', { class: 'embed' },
+        h('iframe', {
+          class: 'embed-frame', src: url, title: 'Decklist on Exburst',
+          referrerpolicy: 'no-referrer', loading: 'eager',
+          sandbox: 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms'
+        }),
+        h('div', { class: 'embed-bar' },
+          h('span', { class: 'hint', text: 'Page not showing? Open it on Exburst.' }),
+          openBtn))
     };
   }
 
@@ -182,7 +203,7 @@ export async function presentView(eventId, startIndex = -1) {
       h('div', { class: 'pres-top' },
         h('span', { class: 'ev', text: evName + ' · ' + shortDate(evDate) }),
         h('span', { class: 'app', text: appName() })),
-      h('div', { class: 'pres-main' + (d.type === 'photo' && photos.get(d.deckId)?.ratio >= 1.2 ? ' wide' : '') },
+      h('div', { class: 'pres-main' + ((d.type === 'photo' && photos.get(d.deckId)?.ratio >= 1.2) || (d.type === 'link' && embeddable(d.content)) ? ' wide' : '') },
         h('div', { class: 'pres-info' },
           h('div', { class: 'pres-place' },
             h('div', { class: 'pres-rank', text: String(e.rank) }),

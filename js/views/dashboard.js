@@ -10,8 +10,8 @@ export async function dashboardView() {
     h('div', { class: 'row between' },
       h('div', null,
         h('h1', { class: 'title', text: 'Your tournaments' }),
-        h('p', { class: 'subtitle', text: 'Every organizer can see and manage all tournaments. Signed in as ' + (me ? me.name : '') })),
-      h('div', { class: 'row' }, refreshButton(() => dashboardView()), h('a', { class: 'btn primary', href: '#/new' }, icon('plus'), 'New tournament'))),
+        h('p', { class: 'subtitle', text: 'Every organizer can see and manage all tournaments.' })),
+      h('div', { class: 'row head-actions' }, refreshButton(() => dashboardView()), h('a', { class: 'btn primary', href: '#/new' }, icon('plus'), 'New tournament'))),
     body));
   body.append(spinner('Loading tournaments...'));
   let events;

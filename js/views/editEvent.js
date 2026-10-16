@@ -111,7 +111,7 @@ export async function editEventView(eventId) {
           h('h2', { class: 'sec', text: 'Players and decklists' }),
           h('p', { class: 'hint', text: submittedCount + ' of ' + data.players.length + ' lists in. Release a list so the player can send a new one. Their old list is kept until they replace it.' })),
         h('div', { class: 'row' },
-          h('button', { class: 'btn primary small', type: 'button', style: 'font-size:14px', disabled: submittedCount === 0, onclick: exportAll }, 'Export all lists (.zip)'),
+          h('button', { class: 'btn small', type: 'button', disabled: submittedCount === 0, onclick: exportAll }, 'Export all lists (.zip)'),
           h('button', { class: 'btn small', type: 'button', onclick: addPlayer }, 'Add late player'))),
       h('div', { class: 'table' }, rows),
       h('p', { class: 'hint', text: "Editing a name, rank or record keeps the player's claim and list. Removing a player also deletes their list. Text lists download as .txt; images and links are listed in summary.csv inside the .zip." }));

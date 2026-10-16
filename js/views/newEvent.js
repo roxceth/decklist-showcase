@@ -19,9 +19,7 @@ export function newEventView() {
   const previewCount = h('span', { class: 'hint' });
   const formMsg = h('div');
   const submit = h('button', { class: 'btn primary', type: 'submit', style: 'flex:1 1 200px;min-height:52px' }, 'Create & get link');
-  const sharePanel = h('div', { class: 'card' },
-    h('h2', { class: 'sec', text: 'Share link' }),
-    h('p', { class: 'hint', text: 'The link appears after you create the tournament. Post it in your group chat.' }));
+  const sharePanel = h('div', { class: 'card', hidden: true }); // appears only once the tournament exists
 
   function drawPreview() {
     const r = parseResults(results.value);
@@ -44,7 +42,7 @@ export function newEventView() {
   }
   results.addEventListener('input', drawPreview);
 
-  const form = h('form', { class: 'card', novalidate: true },
+  const form = h('form', { class: 'card', novalidate: true, oninput: () => { if (formMsg.querySelector('.banner.error')) formMsg.replaceChildren(); } },
     h('div', { class: 'stack' }, h('label', { class: 'lbl', for: 'tname', text: 'Tournament name' }), name),
     h('div', { class: 'row', style: 'align-items:flex-start' },
       h('div', { class: 'stack', style: 'flex:1 1 180px' }, h('label', { class: 'lbl', for: 'tdate', text: 'Date played' }), date),
@@ -85,6 +83,7 @@ export function newEventView() {
       formMsg.replaceChildren(h('div', { class: 'banner ok', text: 'Tournament created with ' + plural(res.playerCount, 'player', 'players') + '.' }));
       const linkInput = h('input', { class: 'input', type: 'text', readonly: true, value: link, 'aria-label': 'Public tournament link' });
       linkInput.addEventListener('focus', () => linkInput.select());
+      sharePanel.hidden = false;
       sharePanel.replaceChildren(
         h('h2', { class: 'sec', text: 'Share link' }),
         h('div', { class: 'linkbox' }, linkInput,

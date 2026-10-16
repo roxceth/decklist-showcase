@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.7 — pulido
+- **Formulario del jugador:** los colores del deck ahora van en una sola fila de 5 y el formato (Text / Image / Exburst link) es una barra segmentada con el título "Send it as", así ya no se confunden. El aviso de que la lista queda bloqueada está encima del botón Enviar, bien visible.
+- **Lista de nombres:** los botones "That's me" son de contorno dorado; el dorado sólido queda para la acción principal de cada pantalla (en Editar torneo, "Export all lists" pasó a botón normal).
+- **Página del jugador:** el nombre del torneo y la fecha ya no van en letras espaciadas arriba; ahora van bajo el nombre del jugador, en dorado.
+- **Presentación:** el nombre del deck es más grande en cada slide.
+- **Panel:** "New tournament" va antes que Refresh en celular; se quitó el "Signed in as" repetido del subtítulo.
+- **Crear torneo:** la tarjeta vacía "Share link" ya no aparece hasta crear el torneo; el error de un campo desaparece al editarlo (antes podía quedarse un error viejo).
+- **Detalles del navegador:** selección de texto, cursor, barras de desplazamiento y selector de fecha en colores de la app; números alineados en puestos y contadores; menos animación si el sistema lo pide.
+
 ## 0.1.6
 - **CapyLeague:** los organizadores con sesión iniciada ven un botón **CapyLeague** en la barra de arriba que abre la página de CapyLeague en una pestaña nueva. No aparece en el login ni en la página de los jugadores. El link se cambia (o se quita, dejándolo vacío) en `config.js`, campo `CAPYLEAGUE_URL`.
 - En celular, el texto "Signed in as" de la barra de arriba se oculta para que los botones quepan en una fila.

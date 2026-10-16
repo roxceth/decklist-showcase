@@ -123,6 +123,7 @@ test('create tournament: preview, validation, share link', async () => {
   await page.getByRole('button', { name: 'Create & get link' }).click();
   await page.getByText('Only https://exburst.dev links are accepted.').waitFor();
   await page.getByLabel('Exburst tournament link (optional)').fill('https://exburst.dev/ua/en/tournaments/10963');
+  assert.equal(await page.locator('.banner.error').count(), 0, 'old error cleared when the field is edited');
   await shot(page, '03-new-tournament-desktop');
   await page.getByRole('button', { name: 'Create & get link' }).click();
   await page.getByText('Tournament created with 8 players.').waitFor();

@@ -31,8 +31,7 @@ export async function playerView(eventId) {
   function header() {
     const ev = data.event;
     return h('div', null,
-      h('div', { class: 'eyebrow', text: 'Union Arena tournament' }),
-      h('h1', { class: 'title', style: 'margin-top:6px', text: ev.name }),
+      h('h1', { class: 'title', text: ev.name }),
       h('p', { class: 'subtitle', text: formatDate(ev.datePlayed) + ' · ' + plural(data.players.length, 'player', 'players') }));
   }
 
@@ -60,7 +59,7 @@ export async function playerView(eventId) {
     const rows = data.players.map((p) => {
       let right;
       if (p.state === 'open' && ev.status === 'open') {
-        right = h('button', { class: 'btn primary', style: 'font-size:16px;min-height:44px;padding:0 16px', type: 'button', onclick: () => root.replaceChildren(...drawPicker(p).filter(Boolean)) }, "That's me");
+        right = h('button', { class: 'btn gold-outline', style: 'font-size:16px;min-height:44px;padding:0 16px', type: 'button', onclick: () => root.replaceChildren(...drawPicker(p).filter(Boolean)) }, "That's me");
       } else if (p.state === 'open') {
         right = h('span', { class: 'claim-state', text: 'Not claimed' });
       } else {
@@ -121,8 +120,8 @@ export async function playerView(eventId) {
     const p = data.players.find((x) => x.playerId === me.playerId);
     const top = [
       h('div', null,
-        h('div', { class: 'eyebrow', text: data.event.name + ' · ' + formatDate(data.event.datePlayed) }),
-        h('h1', { class: 'title', style: 'margin-top:6px', text: p.name }),
+        h('h1', { class: 'title', text: p.name }),
+        h('p', { class: 'ev-line', text: data.event.name + ' · ' + formatDate(data.event.datePlayed) }),
         h('p', { class: 'subtitle', text: ordinal(p.rank) + ' place' + (p.record ? ' · ' + p.record + ' record' : '') }))
     ];
     if (me.deck && me.locked) {
@@ -228,10 +227,10 @@ export async function playerView(eventId) {
       closed ? h('div', { class: 'banner info', text: 'This tournament is no longer accepting lists.' }) : null,
       h('div', { class: 'stack' }, h('label', { class: 'lbl', for: 'deck-name', text: 'Deck name (optional)' }), deckName),
       h('div', { class: 'stack' }, h('span', { class: 'lbl', id: 'color-lbl', text: 'Deck color' }), h('div', { class: 'colors', role: 'radiogroup', 'aria-labelledby': 'color-lbl' }, colorBtns)),
-      h('div', { class: 'tabs', role: 'tablist' }, tabBtns),
+      h('div', { class: 'stack' }, h('span', { class: 'lbl', id: 'fmt-lbl', text: 'Send it as' }), h('div', { class: 'tabs', role: 'tablist', 'aria-labelledby': 'fmt-lbl' }, tabBtns)),
       panels.txt, panels.photo, panels.link,
-      msg, send,
-      h('p', { class: 'hint', text: 'After you submit, your list is locked. The organizer can reopen it if you need to fix something.' }));
+      h('p', { class: 'lock-note', text: 'After you submit, your list is locked. The organizer can reopen it if you need to fix something.' }),
+      msg, send);
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

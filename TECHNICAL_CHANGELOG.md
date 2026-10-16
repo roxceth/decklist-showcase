@@ -1,5 +1,10 @@
 # Technical changelog
 
+## 0.1.7
+- CSS: `.tabs` segmentado, `.colors` grid de 5 (vertical bajo 560 px), `.btn.gold-outline`, `.ev-line`, `.lock-note`, `color-scheme: dark`, `accent-color`, `::selection`, `caret-color`, `scrollbar-color`, `tabular-nums`, `text-wrap: balance`, `prefers-reduced-motion` global, `.head-actions` con `order`.
+- `newEvent.js`: `sharePanel` oculto hasta crear; `oninput` limpia `.banner.error`. `player.js`: sin `.eyebrow`, `aria-labelledby` en tablist. Se mantienen la tarjeta de pasos 01/02/03 y el kicker del login (decisión pendiente).
+- Pruebas: aserción de error limpiado al editar. Total 85.
+
 ## 0.1.6
 - `config.js`: `CAPYLEAGUE_URL` opcional (solo https). `layout.js`: `capyLeagueLink()` en `organizerShell`. La protección real del contenido depende del modo de compartir del artifact, no del login de esta app (la URL está en el código público).
 - Pruebas e2e: +1 (visible solo para organizadores, `target=_blank`, `rel=noopener`). Total 85.

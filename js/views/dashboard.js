@@ -56,7 +56,7 @@ export async function dashboardView() {
         h('div', { class: 'row between', style: 'flex-wrap:nowrap' },
           h('span', { class: 'meta', text: 'Decklists submitted' }),
           h('strong', { text: e.submittedCount + ' / ' + e.playerCount })),
-        h('div', { class: 'progress', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, h('i', { style: 'width:' + pct + '%' }))),
+        h('div', { class: 'progress', role: 'progressbar', 'aria-label': 'Decklists submitted', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, h('i', { style: 'width:' + pct + '%' }))),
       h('div', { class: 'meta', text: 'Auto-deletes in ' + plural(daysLeft(e.expiresAt), 'day', 'days') }),
       h('div', { class: 'btns' },
         h('a', { class: 'btn primary', style: 'font-size:16px', href: '#/present/' + e.eventId }, 'Present'),

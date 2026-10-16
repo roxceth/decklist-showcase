@@ -1,4 +1,4 @@
-import { h, mount, spinner, errorBanner, icon, onLeave, runLeave, ordinal, appName } from '../ui.js';
+import { h, mount, spinner, errorBanner, icon, onLeave, runLeave, ordinal, appName, rankTone } from '../ui.js';
 import { org } from '../api.js';
 import { parseDeckText } from '../../shared/parsers.js';
 
@@ -91,6 +91,11 @@ export async function presentView(eventId, startIndex = -1) {
 
   const root = h('div', { class: 'pres', tabindex: '-1' });
   mount(root);
+  // Screen readers: say which slide is showing, since the whole screen is redrawn on every change.
+  const live = h('div', { class: 'sr-only', role: 'status', 'aria-live': 'polite' });
+  document.body.append(live);
+  onLeave(() => live.remove());
+  function announce(text) { live.textContent = ''; setTimeout(() => { live.textContent = text; }, 50); }
 
   function textPanel(e) {
     const parsed = parseDeckText(e.deck.content);
@@ -165,7 +170,7 @@ export async function presentView(eventId, startIndex = -1) {
     const items = shown.map((e) => {
       const d = e.deck;
       const inner = [
-        h('span', { class: 'sl-rank', text: String(e.rank) }),
+        h('span', { class: 'sl-rank ' + rankTone(e.rank), text: String(e.rank) }),
         h('span', { class: 'sl-who' },
           h('span', { class: 'sl-name', text: e.name }),
           e.record ? h('span', { class: 'sl-rec', text: e.record }) : null),
@@ -179,7 +184,7 @@ export async function presentView(eventId, startIndex = -1) {
     root.replaceChildren(
       h('div', { class: 'pres-top' },
         h('span', { class: 'ev', text: evName + ' · ' + shortDate(evDate) }),
-        h('span', { class: 'app', text: 'Standings' })),
+        h('h1', { class: 'app', text: 'Standings' })),
       h('div', { class: 'standings' + (cols > 1 ? ' multi' : ''), style: '--rows:' + rows + ';--scols:' + cols }, items),
       h('div', { class: 'pres-bottom' },
         h('div', { class: 'stack pres-dots' }, h('span', { class: 'hint', text: 'Click a player to show their decklist' })),
@@ -192,8 +197,9 @@ export async function presentView(eventId, startIndex = -1) {
   }
 
   function render() {
-    if (view === 'list') { renderList(); return; }
+    if (view === 'list') { renderList(); announce('Standings, ' + (showMissing ? data.entries.length : slides.length) + ' players'); return; }
     const e = slides[i];
+    announce('Player ' + (i + 1) + ' of ' + slides.length + ': ' + e.name + ', ' + ordinal(e.rank) + ' place, ' + (e.deck.deckName ? e.deck.deckName + ', ' : '') + e.deck.deckColor);
     const d = e.deck;
     const panel = d.type === 'txt' ? textPanel(e) : d.type === 'photo' ? photoPanel(e) : linkPanel(e);
     const dots = slides.length <= 24
@@ -206,8 +212,9 @@ export async function presentView(eventId, startIndex = -1) {
       h('div', { class: 'pres-main' + ((d.type === 'photo' && photos.get(d.deckId)?.ratio >= 1.2) || (d.type === 'link' && embeddable(d.content)) ? ' wide' : '') },
         h('div', { class: 'pres-info' },
           h('div', { class: 'pres-place' },
-            h('div', { class: 'pres-rank', text: String(e.rank) }),
-            h('div', null, h('small', { text: 'PLACE' }), e.record ? h('b', { text: e.record + ' record' }) : h('b', { text: ordinal(e.rank) }))),
+            h('span', { class: 'sr-only', text: ordinal(e.rank) + ' place' + (e.record ? ', ' + e.record + ' record' : '') }),
+            h('div', { class: 'pres-rank ' + rankTone(e.rank), 'aria-hidden': 'true', text: String(e.rank) }),
+            h('div', { 'aria-hidden': 'true' }, h('small', { text: 'PLACE' }), e.record ? h('b', { text: e.record + ' record' }) : h('b', { text: ordinal(e.rank) }))),
           h('h1', { class: 'pres-name', text: e.name }),
           h('div', { class: 'pres-deck' }, h('span', { class: 'dot ' + d.deckColor }), (d.deckName ? d.deckName + ' · ' : '') + d.deckColor)),
         h('section', { class: 'pres-panel', 'aria-label': 'Decklist' },

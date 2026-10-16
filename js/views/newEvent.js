@@ -1,4 +1,4 @@
-import { h, mount, errorBanner, setBusy, toast, copyText, eventLink, plural } from '../ui.js';
+import { h, mount, errorBanner, setBusy, toast, copyText, eventLink, plural, rankTone } from '../ui.js';
 import { org } from '../api.js';
 import { parseResults, checkTournamentLink } from '../../shared/parsers.js';
 import { organizerShell } from './layout.js';
@@ -29,7 +29,7 @@ export function newEventView() {
       const t = h('div', { class: 'preview-table' },
         h('div', { class: 'h', text: '#' }), h('div', { class: 'h', text: 'PLAYER' }), h('div', { class: 'h rec', text: 'RECORD' }));
       for (const p of r.players.slice(0, 200)) {
-        t.append(h('div', { class: 'r', text: String(p.rank) }), h('div', { text: p.name }), h('div', { class: 'rec', text: p.record }));
+        t.append(h('div', { class: 'r ' + rankTone(p.rank), text: String(p.rank) }), h('div', { text: p.name }), h('div', { class: 'rec', text: p.record }));
       }
       kids.push(t);
     } else {

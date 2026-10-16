@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8 — login y colores por puesto
+- **Login rediseñado:** se quitaron la etiqueta de arriba y los tres pasos numerados. Ahora el login muestra un torneo de ejemplo (4 jugadores con puesto, récord y deck) para que se entienda de un vistazo qué hace la app.
+- **Colores por puesto:** 1.º dorado, 2.º plata, 3.º bronce y el resto neutro. Se ve igual en el listado de posiciones, en cada slide de la presentación, en la lista de nombres del jugador, en Editar torneo y en Crear torneo.
+- **Lectores de pantalla:** cada slide se anuncia ("Player 2 of 8: nombre, 2nd place, deck, color"); el puesto se lee como "1st place, 5-0 record"; los botones "That's me" dicen de quién es el nombre; la barra de progreso tiene nombre; el ícono de Refresh ahora es un dibujo y no un carácter de texto; el título del listado es un encabezado real.
+- **Pendiente de probar en tu equipo:** tipografías reales (Rajdhani/Barlow), iPhone/Safari, ícono en la pantalla de inicio, lectores de pantalla reales, fotos reales y HEIC, importación real desde Exburst y velocidad del Apps Script en frío.
+
 ## 0.1.7 — pulido
 - **Formulario del jugador:** los colores del deck ahora van en una sola fila de 5 y el formato (Text / Image / Exburst link) es una barra segmentada con el título "Send it as", así ya no se confunden. El aviso de que la lista queda bloqueada está encima del botón Enviar, bien visible.
 - **Lista de nombres:** los botones "That's me" son de contorno dorado; el dorado sólido queda para la acción principal de cada pantalla (en Editar torneo, "Export all lists" pasó a botón normal).

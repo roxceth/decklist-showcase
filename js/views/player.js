@@ -1,4 +1,4 @@
-import { h, mount, refreshButton, spinner, errorBanner, toast, formatDate, plural, ordinal, icon, COLORS, setBusy } from '../ui.js';
+import { h, mount, refreshButton, spinner, errorBanner, toast, formatDate, plural, ordinal, icon, COLORS, setBusy, rankTone } from '../ui.js';
 import { call } from '../api.js';
 import { getSecret } from '../session.js';
 import { parseDeckText, checkDeckLink, LIMITS } from '../../shared/parsers.js';
@@ -59,7 +59,7 @@ export async function playerView(eventId) {
     const rows = data.players.map((p) => {
       let right;
       if (p.state === 'open' && ev.status === 'open') {
-        right = h('button', { class: 'btn gold-outline', style: 'font-size:16px;min-height:44px;padding:0 16px', type: 'button', onclick: () => root.replaceChildren(...drawPicker(p).filter(Boolean)) }, "That's me");
+        right = h('button', { class: 'btn gold-outline', style: 'font-size:16px;min-height:44px;padding:0 16px', type: 'button', 'aria-label': "That's me: " + p.name, onclick: () => root.replaceChildren(...drawPicker(p).filter(Boolean)) }, "That's me");
       } else if (p.state === 'open') {
         right = h('span', { class: 'claim-state', text: 'Not claimed' });
       } else {
@@ -67,7 +67,7 @@ export async function playerView(eventId) {
         right = h('span', { class: 'claim-state ' + cls }, p.state === 'submitted' ? icon('check') : null, ' ', txt.split('\n').flatMap((t, i) => (i ? [h('br'), t] : [t])));
       }
       return h('div', { class: 'claim-row' },
-        h('span', { class: 'rank', text: String(p.rank) }),
+        h('span', { class: 'rank ' + rankTone(p.rank), text: String(p.rank) }),
         h('div', { class: 'nm' }, p.name, p.record ? h('small', { text: p.record + ' record' }) : null),
         right);
     });
@@ -106,7 +106,7 @@ export async function playerView(eventId) {
       h('div', { class: 'card' },
         h('h2', { class: 'sec', text: 'Is this you?' }),
         h('div', { class: 'claim-row' },
-          h('span', { class: 'rank', text: String(p.rank) }),
+          h('span', { class: 'rank ' + rankTone(p.rank), text: String(p.rank) }),
           h('div', { class: 'nm' }, p.name, h('small', { text: ordinal(p.rank) + ' place' + (p.record ? ' · ' + p.record + ' record' : '') }))),
         h('p', { class: 'hint', text: 'You can only claim one name on this device. If you pick the wrong one, the organizer can release it.' }),
         msg, yes,

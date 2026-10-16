@@ -781,6 +781,84 @@ test('organizers see a CapyLeague link that opens in a new tab; players and sign
   await page.context().close();
 });
 
+test('login: no kicker or numbered cards; a sample of the standings shows the product; hidden from screen readers', async () => {
+  for (const [label, vp] of [['desktop', { width: 1280, height: 800 }], ['mobile', { width: 390, height: 844 }]]) {
+    const page = await newPage(vp.width === 390 ? MOBILE : DESKTOP);
+    await page.goto(srv.base + '/#/');
+    await page.getByRole('heading', { name: 'Organizer sign-in' }).waitFor();
+    assert.equal(await page.locator('.eyebrow, .steps, .step').count(), 0);
+    assert.equal(await page.locator('.sample[aria-hidden="true"] .mini-row').count(), 4);
+    assert.equal(await page.getByText('Sample tournament').count(), 1);
+    const tones = await page.locator('.mini-row').evaluateAll((els) => els.map((e) => e.className.replace('mini-row ', '')));
+    assert.deepEqual(tones, ['r1', 'r2', 'r3', 'rn']);
+    await noHorizontalOverflow(page, 'login ' + label);
+    await shot(page, '01c-login-' + label, false);
+    await page.context().close();
+  }
+});
+
+test('finishing positions: gold, silver, bronze, then neutral, readable everywhere', async () => {
+  const t = srv.gas.post({ action: 'login', name: 'Hector D.', password: PW }).data.token;
+  const ev = srv.gas.post({ action: 'createEvent', token: t, name: 'Podium Cup', datePlayed: '2026-10-15', expireDays: 14, resultsText: '1 Ana 4-0\n2 Beto 3-1\n3 Cami 3-1\n4 Dan 2-2' }).data.eventId;
+  const ps = srv.gas.post({ action: 'getEvent', eventId: ev }).data.players;
+  ps.forEach((p, k) => { const sec = String(k + 1).repeat(32); srv.gas.post({ action: 'claimPlayer', eventId: ev, playerId: p.playerId, secret: sec }); srv.gas.post({ action: 'submitDeck', eventId: ev, playerId: p.playerId, secret: sec, type: 'txt', deckColor: ['Red', 'Blue', 'Green', 'Yellow'][k], content: '// Main deck\n4 x UE24BT/REZ-1-00' + (k + 1) }); });
+  const lum = (c) => { const [r, g, b] = c.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const page = await newPage({ viewport: { width: 1280, height: 720 } });
+  await login(page);
+  await page.goto(srv.base + '/#/present/' + ev);
+  await page.locator('.standings').waitFor();
+  const chips = await page.locator('.sl-rank').evaluateAll((els) => els.map((e) => ({ cls: e.className, bg: getComputedStyle(e).backgroundColor, fg: getComputedStyle(e).color })));
+  assert.deepEqual(chips.map((c) => c.cls.split(' ')[1]), ['r1', 'r2', 'r3', 'rn']);
+  assert.equal(new Set(chips.map((c) => c.bg)).size, 4, 'four different chip colours');
+  for (const c of chips) assert.ok(ratio(c.bg, c.fg) >= 4.5, 'chip contrast ' + c.cls + ' ' + ratio(c.bg, c.fg).toFixed(2));
+  await shot(page, '10c-standings-podium', false);
+  await page.locator('button.sl-row').nth(1).click();
+  await page.locator('.pres-rank.r2').waitFor();
+  await shot(page, '08c-present-silver', false);
+  await page.keyboard.press('ArrowRight');
+  await page.locator('.pres-rank.r3').waitFor();
+  await shot(page, '08d-present-bronze', false);
+  // the player's own list and the organizer's roster use the same families, with readable numbers on the card background
+  const pl = await newPage(MOBILE);
+  await pl.goto(srv.base + '/#/e/' + ev);
+  await pl.locator('.claim-row .rank').first().waitFor();
+  const nums = await pl.locator('.claim-row .rank').evaluateAll((els) => els.map((e) => ({ cls: e.className, fg: getComputedStyle(e).color, bg: getComputedStyle(e.closest('.claim-row')).backgroundColor })));
+  assert.deepEqual(nums.map((n) => n.cls.split(' ')[1]), ['r1', 'r2', 'r3', 'rn']);
+  for (const n of nums) assert.ok(ratio(n.bg, n.fg) >= 4.5, 'number contrast ' + n.cls + ' ' + ratio(n.bg, n.fg).toFixed(2));
+  await pl.context().close();
+  await page.context().close();
+  srv.gas.post({ action: 'deleteEvent', token: t, eventId: ev });
+});
+
+test('screen-reader semantics: named buttons and progress, no glyph icons, slide changes announced', async () => {
+  const t = srv.gas.post({ action: 'login', name: 'Hector D.', password: PW }).data.token;
+  const ev = srv.gas.post({ action: 'createEvent', token: t, name: 'A11y Cup', datePlayed: '2026-10-15', expireDays: 14, resultsText: '1 Ana 2-0\n2 Beto 1-1\n3 Cami 0-2' }).data.eventId;
+  const ps = srv.gas.post({ action: 'getEvent', eventId: ev }).data.players;
+  ps.slice(0, 2).forEach((p, k) => { const sec = String(k + 5).repeat(32); srv.gas.post({ action: 'claimPlayer', eventId: ev, playerId: p.playerId, secret: sec }); srv.gas.post({ action: 'submitDeck', eventId: ev, playerId: p.playerId, secret: sec, type: 'txt', deckColor: 'Blue', content: '// Main deck\n4 x UE24BT/REZ-1-00' + (k + 1) }); });
+  const page = await newPage({ viewport: { width: 1280, height: 720 } });
+  await login(page);
+  assert.equal(await page.getByRole('progressbar', { name: 'Decklists submitted' }).count() > 0, true);
+  assert.ok(!/\u21bb/.test(await page.locator('body').innerText()), 'no unicode arrow glyph as an icon');
+  assert.equal(await page.getByRole('button', { name: /Refresh/ }).first().locator('svg').count(), 1, 'icon is drawn, not typed');
+  await page.goto(srv.base + '/#/present/' + ev);
+  await page.getByRole('heading', { name: 'Standings', level: 1 }).waitFor();
+  await page.locator('button.sl-row').first().click();
+  await page.locator('.pres-name').waitFor();
+  await page.locator('[role=status]', { hasText: /^Player 1 of 2: / }).waitFor();
+  assert.match(await page.locator('.pres-place .sr-only').textContent(), /1st place/);
+  await page.keyboard.press('ArrowRight');
+  await page.locator('[role=status]', { hasText: /^Player 2 of 2: / }).waitFor();
+  await page.context().close();
+  const pl = await newPage(MOBILE);
+  await pl.goto(srv.base + '/#/e/' + ev);
+  await pl.getByRole('heading', { name: 'Find your name' }).waitFor();
+  const names = await pl.getByRole('button', { name: /That's me/ }).evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
+  assert.deepEqual(names, ["That's me: Cami"], 'each button says whose name it claims');
+  await pl.context().close();
+  srv.gas.post({ action: 'deleteEvent', token: t, eventId: ev });
+});
+
 test('logo falls back to the built-in icon when the configured file is missing', async () => {
   const page = await newPage();
   await page.route('**/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "window.DS_CONFIG={API_URL:'/api',APP_NAME:'X Showcase',LOGO_URL:'assets/does-not-exist.png'};" }));

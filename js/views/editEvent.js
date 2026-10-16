@@ -1,4 +1,4 @@
-import { h, mount, refreshButton, spinner, errorBanner, toast, modal, copyText, eventLink, formatDate, plural } from '../ui.js';
+import { h, mount, refreshButton, spinner, errorBanner, toast, modal, copyText, eventLink, formatDate, plural, rankTone } from '../ui.js';
 import { org } from '../api.js';
 import { parseDeckText, checkTournamentLink } from '../../shared/parsers.js';
 import { downloadTxt, downloadZip } from '../exporter.js';
@@ -139,7 +139,7 @@ export async function editEventView(eventId) {
     acts.push(h('button', { class: 'btn small', type: 'button', onclick: () => editPlayer(p) }, 'Edit'));
     acts.push(h('button', { class: 'btn small danger', type: 'button', onclick: () => removePlayer(p) }, 'Remove'));
     return h('div', { class: 'trow' },
-      h('span', { class: 'rank', text: String(p.rank) }),
+      h('span', { class: 'rank ' + rankTone(p.rank), text: String(p.rank) }),
       h('span', { class: 'nm', text: p.name }),
       h('span', { class: 'rec', text: p.record }),
       h('span', { class: 'st ' + (good ? 'good' : p.state === 'released' ? 'warn' : ''), text: stateText }),

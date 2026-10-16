@@ -35,7 +35,7 @@ El panel muestra cuántas listas llevan y cuándo se borra cada torneo. *Mine on
 ![Editar torneo](screenshots/07-edit-desktop.png)
 
 ### 5. Presentar y grabar
-Pulsa **Present**. Si un jugador envió un link de Exburst, su slide muestra la página de Exburst dentro de la presentación (con botón *Open on Exburst* de respaldo). Primero verás el **listado por posiciones** con el nombre y el deck de cada jugador (solo los que enviaron lista; con **Show without list** de la barra de abajo puedes ver también a los demás, atenuados). Haz clic en un jugador para mostrar su decklist; con **List (L)** vuelves al listado.
+Pulsa **Present**. Si un jugador envió un link de Exburst, su slide muestra la página de Exburst dentro de la presentación (con botón *Open on Exburst* de respaldo). Primero verás el **listado por posiciones** con el nombre y el deck de cada jugador (solo los que enviaron lista; con **Show without list** de la barra de abajo puedes ver también a los demás, atenuados). Los tres primeros puestos se distinguen por color (dorado, plata, bronce). Haz clic en un jugador para mostrar su decklist; con **List (L)** vuelves al listado.
 
 ![Listado](screenshots/10-present-standings.png)
 

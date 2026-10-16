@@ -1,7 +1,19 @@
-import { h, mount, setBusy, errorBanner, icon } from '../ui.js';
+import { h, mount, setBusy, errorBanner, icon, rankTone } from '../ui.js';
 import { call } from '../api.js';
 import { setOrganizer, getOrganizer } from '../session.js';
 import { brand } from './layout.js';
+
+// A static picture of what the organizer gets: the standings, one deck per player.
+function sample() {
+  const rows = [[1, 'Kenji', '5-0', 'Yellow', 'Ram + Rem'], [2, 'Mara', '4-1', 'Blue', 'Blue'], [3, 'Dante', '4-1', 'Red', 'Red'], [4, 'Iris', '3-2', 'Green', 'Green']];
+  return h('div', { class: 'sample', 'aria-hidden': 'true' },
+    h('div', { class: 'sample-cap', text: 'Sample tournament' }),
+    rows.map(([rank, who, rec, color, deck]) => h('div', { class: 'mini-row ' + rankTone(rank) },
+      h('span', { class: 'mini-rank', text: String(rank) }),
+      h('span', { class: 'mini-name', text: who }),
+      h('span', { class: 'mini-rec', text: rec }),
+      h('span', { class: 'mini-deck' }, h('span', { class: 'dot ' + color }), deck))));
+}
 
 export function loginView(notice) {
   if (getOrganizer()) {
@@ -42,13 +54,9 @@ export function loginView(notice) {
     h('main', { class: 'page' },
       h('div', { class: 'hero' },
         h('div', { class: 'hero-text' },
-          h('div', { class: 'eyebrow', text: 'Union Arena · CapyBros' }),
           h('h1', null, 'Every decklist.', h('br'), 'One link.'),
           h('p', { class: 'subtitle', text: 'Post your tournament results, share the link, and players claim their name and submit what they played. Then present all the lists in one view.' }),
-          h('div', { class: 'steps' },
-            h('div', { class: 'step' }, h('b', { text: '01' }), 'Post the results'),
-            h('div', { class: 'step' }, h('b', { text: '02' }), 'Players submit lists'),
-            h('div', { class: 'step' }, h('b', { text: '03' }), 'Present and record'))),
+          sample()),
         form))));
   name.focus();
 }

@@ -1,5 +1,13 @@
 # Technical changelog
 
+## 0.1.8
+- `ui.js`: `rankTone(n)` -> `r1|r2|r3|rn`; CSS vars `--rk-fill/--rk-ink/--rk-text` (`.r1 #e0b14a`, `.r2 #c9d1dd`, `.r3 #cf8a5c`, `.rn #2a3140`). Aplicado en `present.js` (`pres-rank`, `sl-rank`), `player.js`, `editEvent.js`, `newEvent.js`. Icono `refresh` en SVG; `refreshButton` usa `replaceChildren(icon, text)`.
+- `login.js`: se eliminan eyebrow y `.steps`; `sample()` (`.sample`, `aria-hidden`) con 4 `.mini-row`. CSS muerto `.eyebrow/.steps/.step` eliminado.
+- A11y: `present.js` con región `role=status aria-live=polite` (`announce()`), `.pres-place` con `.sr-only` ordinal+récord, `h1.app` "Standings"; `.sr-only` global; `aria-label` en progressbar y botones "That's me".
+- `.cardlist` con fallback `2.6vh` antes de `cqw`.
+- Pruebas: +3 (login, podio con contraste >=4.5, semantica de lector de pantalla). Total 88.
+- No verificable en el sandbox: WebKit, fuentes reales, Apps Script/Pages en vivo, lectores de pantalla reales.
+
 ## 0.1.7
 - CSS: `.tabs` segmentado, `.colors` grid de 5 (vertical bajo 560 px), `.btn.gold-outline`, `.ev-line`, `.lock-note`, `color-scheme: dark`, `accent-color`, `::selection`, `caret-color`, `scrollbar-color`, `tabular-nums`, `text-wrap: balance`, `prefers-reduced-motion` global, `.head-actions` con `order`.
 - `newEvent.js`: `sharePanel` oculto hasta crear; `oninput` limpia `.banner.error`. `player.js`: sin `.eyebrow`, `aria-labelledby` en tablist. Se mantienen la tarjeta de pasos 01/02/03 y el kicker del login (decisión pendiente).

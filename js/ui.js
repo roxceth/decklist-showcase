@@ -6,6 +6,7 @@ const SVG = {
   check: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   ext: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7 3H4a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1v-3M10 3h5v5M15 3l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   link: '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1" stroke="#e0b14a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  refresh: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13 8a5 5 0 11-1.6-3.7M13 2.5v3h-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   plus: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
 };
 
@@ -32,10 +33,11 @@ export function refreshButton(fn, label = 'Refresh') {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = 'btn small';
-  btn.textContent = '\u21bb ' + label;
+  const setLabel = (text) => { btn.replaceChildren(icon('refresh'), document.createTextNode(' ' + text)); };
+  setLabel(label);
   btn.addEventListener('click', async () => {
     btn.disabled = true;
-    btn.textContent = '\u21bb Refreshing...';
+    setLabel('Refreshing...');
     try {
       await fn();
     } catch (e) {
@@ -43,7 +45,7 @@ export function refreshButton(fn, label = 'Refresh') {
     }
     if (btn.isConnected) {
       btn.disabled = false;
-      btn.textContent = '\u21bb ' + label;
+      setLabel(label);
     }
   });
   return btn;
@@ -203,4 +205,10 @@ export function runLeave() {
   while (leaveFns.length) {
     try { leaveFns.pop()(); } catch (e) { /* ignore */ }
   }
+}
+
+// Colour family for a finishing position: gold, silver, bronze, then neutral.
+export function rankTone(n) {
+  n = Number(n);
+  return n === 1 ? 'r1' : n === 2 ? 'r2' : n === 3 ? 'r3' : 'rn';
 }

@@ -6,7 +6,7 @@
  * Parsers.gs is generated from shared/parsers.js. Do not edit it by hand.
  */
 
-var VERSION = '0.1.0';
+var VERSION = '0.2.0';
 var SESSION_TTL_SEC = 21600; // 6 h (CacheService maximum)
 var LOGIN_MAX_FAILS = 5;
 var LOGIN_LOCK_SEC = 900;
@@ -16,9 +16,15 @@ var MAX_BODY_CHARS = 3000000;
 var DEFAULT_EXPIRE_DAYS = 14;
 var MAX_EXPIRE_DAYS = 90;
 var AUDIT_KEEP_DAYS = 90;
+var TEMP_PASSWORD_HOURS = 72;
+var MAX_ORGANIZERS = 50;
+// A person whose temporary password is pending can only call these.
+var ALLOWED_WHILE_TEMP = { changePassword: 1, logout: 1, whoami: 1 };
+var TEMP_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'; // 31 symbols, no look-alikes
 
 var SCHEMA = {
-  Organizers: ['OrganizerID', 'Name', 'PassSalt', 'PassHash', 'Active', 'CreatedAt'],
+  // Role: 'admin' or ''. TempUntil: ISO time until which a temporary password works; '' once the person chose their own.
+  Organizers: ['OrganizerID', 'Name', 'PassSalt', 'PassHash', 'Active', 'CreatedAt', 'Role', 'TempUntil'],
   Events: ['EventID', 'Name', 'DatePlayed', 'CreatedBy', 'CreatedAt', 'ExpiresAt', 'Status', 'FolderID', 'ExburstUrl'],
   Players: ['PlayerID', 'EventID', 'Rank', 'Name', 'Record', 'ClaimHash', 'ClaimedAt', 'CurrentDeckID', 'ListLocked'],
   Decklists: ['DeckID', 'EventID', 'PlayerID', 'Type', 'DeckName', 'DeckColor', 'Content', 'FileID', 'SubmittedAt'],
@@ -76,7 +82,12 @@ function dispatch_(body) {
     var handler = HANDLERS[action];
     if (!handler) fail_('unknown_action', 'Unknown action.');
     var ctx = {};
-    if (!PUBLIC_ACTIONS[action]) ctx.organizer = requireSession_(body.token);
+    if (!PUBLIC_ACTIONS[action]) {
+      ctx.organizer = requireSession_(body.token);
+      if (ctx.organizer.mustChange && !ALLOWED_WHILE_TEMP[action]) {
+        fail_('password_change_required', 'Choose your own password first.');
+      }
+    }
     return { ok: true, data: handler(body, ctx) };
   } catch (err) {
     if (err instanceof ApiError) return errorBody_(err);
@@ -289,6 +300,29 @@ function passwordHash_(salt, password) {
   return sha256_(salt + ':' + password);
 }
 
+function orgView_(o) {
+  return { id: o.OrganizerID, name: o.Name, role: o.Role === 'admin' ? 'admin' : 'organizer', mustChange: tempPending_(o) };
+}
+
+function tempPending_(o) {
+  return o.TempUntil !== '';
+}
+
+// A session is tied to the password it was created with: changing or resetting the password ends every older session.
+function sessionMark_(o) {
+  return o.PassHash.slice(0, 16);
+}
+
+function newSession_(o) {
+  var token = newId_(64);
+  CacheService.getScriptCache().put('sess:' + token, JSON.stringify({ id: o.OrganizerID, pv: sessionMark_(o) }), SESSION_TTL_SEC);
+  return token;
+}
+
+function failKey_(name) {
+  return 'fail:' + sha256_(String(name).toLowerCase()).slice(0, 32);
+}
+
 function loginHandler_(b) {
   var name = typeof b.name === 'string' ? b.name.replace(/\s+/g, ' ').trim() : '';
   var password = typeof b.password === 'string' ? b.password : '';
@@ -296,7 +330,7 @@ function loginHandler_(b) {
     fail_('bad_login', 'Wrong name or password.');
   }
   var cache = CacheService.getScriptCache();
-  var failKey = 'fail:' + sha256_(name.toLowerCase()).slice(0, 32);
+  var failKey = failKey_(name);
   var fails = parseInt(cache.get(failKey) || '0', 10);
   if (fails >= LOGIN_MAX_FAILS) {
     fail_('locked', 'Too many failed attempts. Try again in 15 minutes.');
@@ -312,10 +346,11 @@ function loginHandler_(b) {
     cache.put(failKey, String(fails + 1), LOGIN_LOCK_SEC);
     fail_('bad_login', 'Wrong name or password.');
   }
+  if (tempPending_(found) && found.TempUntil < nowIso_()) {
+    fail_('temp_expired', 'That temporary password expired. Ask an administrator for a new one.');
+  }
   cache.remove(failKey);
-  var token = newId_(64);
-  cache.put('sess:' + token, JSON.stringify({ id: found.OrganizerID }), SESSION_TTL_SEC);
-  return { token: token, organizer: { id: found.OrganizerID, name: found.Name }, expiresInSec: SESSION_TTL_SEC };
+  return { token: newSession_(found), organizer: orgView_(found), expiresInSec: SESSION_TTL_SEC };
 }
 
 function requireSession_(token) {
@@ -325,12 +360,57 @@ function requireSession_(token) {
   var sess = JSON.parse(raw);
   var orgs = readAll_('Organizers');
   for (var i = 0; i < orgs.length; i++) {
-    if (orgs[i].OrganizerID === sess.id && orgs[i].Active === 'TRUE') {
-      return { id: orgs[i].OrganizerID, name: orgs[i].Name };
+    var o = orgs[i];
+    // Role and status are read from the sheet on every call. The browser never says what it is allowed to do.
+    if (o.OrganizerID === sess.id && o.Active === 'TRUE' && sess.pv === sessionMark_(o)) {
+      if (tempPending_(o) && o.TempUntil < nowIso_()) break;
+      return orgView_(o);
     }
   }
   CacheService.getScriptCache().remove('sess:' + token);
   fail_('unauthorized', 'Please sign in again.');
+}
+
+function whoamiHandler_(b, ctx) {
+  return { organizer: ctx.organizer };
+}
+
+function findOrganizer_(id) {
+  var orgs = readAll_('Organizers');
+  for (var i = 0; i < orgs.length; i++) if (orgs[i].OrganizerID === id) return orgs[i];
+  fail_('not_found', 'Organizer not found.');
+}
+
+function validNewPassword_(pw) {
+  if (typeof pw !== 'string') fail_('invalid', 'Enter a new password.');
+  if (pw.length < MIN_PASSWORD) fail_('invalid', 'The new password needs at least ' + MIN_PASSWORD + ' characters.');
+  if (pw.length > 200) fail_('invalid', 'The new password is too long.');
+  return pw;
+}
+
+// Own password change. Needs the current (or temporary) password, shares the login lockout, returns a fresh session.
+function changePasswordHandler_(b, ctx) {
+  var current = typeof b.currentPassword === 'string' ? b.currentPassword : '';
+  var next = validNewPassword_(b.newPassword);
+  var cache = CacheService.getScriptCache();
+  var failKey = failKey_(ctx.organizer.name);
+  var fails = parseInt(cache.get(failKey) || '0', 10);
+  if (fails >= LOGIN_MAX_FAILS) fail_('locked', 'Too many failed attempts. Try again in 15 minutes.');
+  return withLock_(function () {
+    var o = findOrganizer_(ctx.organizer.id);
+    if (!safeEqual_(passwordHash_(o.PassSalt, current), o.PassHash)) {
+      cache.put(failKey, String(fails + 1), LOGIN_LOCK_SEC);
+      fail_('bad_password', 'The current password is not right.');
+    }
+    if (next === current) fail_('invalid', 'Choose a password different from the current one.');
+    cache.remove(failKey);
+    var salt = newId_(32);
+    updateObj_('Organizers', o, { PassSalt: salt, PassHash: passwordHash_(salt, next), TempUntil: '' });
+    var updated = findOrganizer_(o.OrganizerID);
+    cache.remove('sess:' + b.token);
+    audit_('', o.Name, 'passwordChanged', '');
+    return { token: newSession_(updated), organizer: orgView_(updated), expiresInSec: SESSION_TTL_SEC };
+  });
 }
 
 function logoutHandler_(b) {
@@ -574,6 +654,116 @@ function checkCanSubmit_(player, hash) {
   if (player.CurrentDeckID !== '' && player.ListLocked === 'TRUE') {
     fail_('locked_list', 'Your list is already sent. Ask the organizer to reopen it if you need to change it.');
   }
+}
+
+// ---------------------------------------------------------------- administrator handlers
+
+function requireAdmin_(ctx) {
+  if (ctx.organizer.role !== 'admin') fail_('forbidden', 'Only administrators can do this.');
+}
+
+// 12 characters from a 31-symbol alphabet (about 59 bits), written in groups of 4. Rejection sampling avoids modulo bias.
+function tempPassword_() {
+  var out = '';
+  while (out.length < 12) {
+    var hex = Utilities.getUuid().replace(/-/g, '');
+    for (var i = 0; i + 1 < hex.length && out.length < 12; i += 2) {
+      var n = parseInt(hex.substr(i, 2), 16);
+      if (n < 248) out += TEMP_ALPHABET.charAt(n % 31); // 248 = 31 * 8
+    }
+  }
+  return out.slice(0, 4) + '-' + out.slice(4, 8) + '-' + out.slice(8, 12);
+}
+
+function activeAdminCount_(orgs, exceptId) {
+  return orgs.filter(function (o) { return o.Role === 'admin' && o.Active === 'TRUE' && o.OrganizerID !== exceptId; }).length;
+}
+
+function listOrganizersHandler_(b, ctx) {
+  requireAdmin_(ctx);
+  var now = nowIso_();
+  return readAll_('Organizers')
+    .sort(function (a, c) { return a.Name.toLowerCase() < c.Name.toLowerCase() ? -1 : 1; })
+    .map(function (o) {
+      return {
+        id: o.OrganizerID, name: o.Name, role: o.Role === 'admin' ? 'admin' : 'organizer',
+        active: o.Active === 'TRUE', createdAt: o.CreatedAt,
+        tempPending: tempPending_(o) && o.TempUntil >= now, tempExpired: tempPending_(o) && o.TempUntil < now,
+        isMe: o.OrganizerID === ctx.organizer.id
+      };
+    });
+}
+
+function createOrganizerHandler_(b, ctx) {
+  requireAdmin_(ctx);
+  var name = reqStr_(b.name, 'Name', 60, true);
+  var role = b.role === 'admin' ? 'admin' : '';
+  return withLock_(function () {
+    var orgs = readAll_('Organizers');
+    if (orgs.length >= MAX_ORGANIZERS) fail_('limit', 'There are already ' + MAX_ORGANIZERS + ' organizers.');
+    if (orgs.some(function (o) { return o.Name.toLowerCase() === name.toLowerCase(); })) {
+      fail_('exists', 'Someone already uses that name.');
+    }
+    var temp = tempPassword_();
+    var salt = newId_(32);
+    var id = newId_(8);
+    appendObj_('Organizers', {
+      OrganizerID: id, Name: name, PassSalt: salt, PassHash: passwordHash_(salt, temp), Active: 'TRUE',
+      CreatedAt: nowIso_(), Role: role, TempUntil: addDays_(nowIso_(), TEMP_PASSWORD_HOURS / 24)
+    });
+    audit_('', ctx.organizer.name, 'orgCreate', name + (role ? ' (admin)' : ''));
+    return { id: id, name: name, role: role === 'admin' ? 'admin' : 'organizer', tempPassword: temp, validHours: TEMP_PASSWORD_HOURS };
+  });
+}
+
+function resetOrganizerPasswordHandler_(b, ctx) {
+  requireAdmin_(ctx);
+  var id = reqId_(b.organizerId, 'organizer');
+  if (id === ctx.organizer.id) fail_('invalid', 'Use "Change password" for your own account.');
+  return withLock_(function () {
+    var o = findOrganizer_(id);
+    var temp = tempPassword_();
+    var salt = newId_(32);
+    updateObj_('Organizers', o, {
+      PassSalt: salt, PassHash: passwordHash_(salt, temp), Active: 'TRUE', TempUntil: addDays_(nowIso_(), TEMP_PASSWORD_HOURS / 24)
+    });
+    CacheService.getScriptCache().remove(failKey_(o.Name));
+    audit_('', ctx.organizer.name, 'orgReset', o.Name);
+    return { id: o.OrganizerID, name: o.Name, tempPassword: temp, validHours: TEMP_PASSWORD_HOURS };
+  });
+}
+
+function setOrganizerActiveHandler_(b, ctx) {
+  requireAdmin_(ctx);
+  var id = reqId_(b.organizerId, 'organizer');
+  if (typeof b.active !== 'boolean') fail_('invalid', 'Active must be true or false.');
+  if (id === ctx.organizer.id) fail_('invalid', 'You can not disable your own account.');
+  return withLock_(function () {
+    var orgs = readAll_('Organizers');
+    var o = findOrganizer_(id);
+    if (!b.active && o.Role === 'admin' && activeAdminCount_(orgs, id) < 1) {
+      fail_('last_admin', 'There must be at least one active administrator.');
+    }
+    updateObj_('Organizers', o, { Active: b.active ? 'TRUE' : 'FALSE' });
+    audit_('', ctx.organizer.name, b.active ? 'orgEnable' : 'orgDisable', o.Name);
+    return { id: o.OrganizerID, active: b.active };
+  });
+}
+
+function setOrganizerRoleHandler_(b, ctx) {
+  requireAdmin_(ctx);
+  var id = reqId_(b.organizerId, 'organizer');
+  if (b.role !== 'admin' && b.role !== 'organizer') fail_('invalid', 'Role must be admin or organizer.');
+  return withLock_(function () {
+    var orgs = readAll_('Organizers');
+    var o = findOrganizer_(id);
+    if (b.role === 'organizer' && o.Role === 'admin' && o.Active === 'TRUE' && activeAdminCount_(orgs, id) < 1) {
+      fail_('last_admin', 'There must be at least one active administrator.');
+    }
+    updateObj_('Organizers', o, { Role: b.role === 'admin' ? 'admin' : '' });
+    audit_('', ctx.organizer.name, 'orgRole', o.Name + ' -> ' + b.role);
+    return { id: o.OrganizerID, role: b.role };
+  });
 }
 
 // ---------------------------------------------------------------- organizer handlers
@@ -820,6 +1010,13 @@ var HANDLERS = {
   ping: function () { return { version: VERSION, time: nowIso_() }; },
   login: loginHandler_,
   logout: logoutHandler_,
+  whoami: whoamiHandler_,
+  changePassword: changePasswordHandler_,
+  listOrganizers: listOrganizersHandler_,
+  createOrganizer: createOrganizerHandler_,
+  resetOrganizerPassword: resetOrganizerPasswordHandler_,
+  setOrganizerActive: setOrganizerActiveHandler_,
+  setOrganizerRole: setOrganizerRoleHandler_,
   getEvent: getEventHandler_,
   claimPlayer: claimPlayerHandler_,
   submitDeck: submitDeckHandler_,
@@ -919,7 +1116,8 @@ function addOrganizerFromProperties() {
   }
 }
 
-function addOrganizer(name, password) {
+/** Editor-only. role = 'admin' creates or promotes an administrator. A password set here is final (no forced change). */
+function addOrganizer(name, password, role) {
   name = String(name || '').replace(/\s+/g, ' ').trim();
   if (!name || name.length > 60 || startsWithFormulaChar(name)) throw new Error('Invalid organizer name.');
   if (String(password || '').length < MIN_PASSWORD) throw new Error('Password must have at least ' + MIN_PASSWORD + ' characters.');
@@ -928,13 +1126,32 @@ function addOrganizer(name, password) {
     var hash = passwordHash_(salt, password);
     var existing = readAll_('Organizers').filter(function (o) { return o.Name.toLowerCase() === name.toLowerCase(); })[0];
     if (existing) {
-      updateObj_('Organizers', existing, { PassSalt: salt, PassHash: hash, Active: 'TRUE' });
+      var patch = { PassSalt: salt, PassHash: hash, Active: 'TRUE', TempUntil: '' };
+      if (role === 'admin') patch.Role = 'admin';
+      updateObj_('Organizers', existing, patch);
       return 'Password reset for ' + existing.Name;
     }
     appendObj_('Organizers', {
-      OrganizerID: newId_(8), Name: name, PassSalt: salt, PassHash: hash, Active: 'TRUE', CreatedAt: nowIso_()
+      OrganizerID: newId_(8), Name: name, PassSalt: salt, PassHash: hash, Active: 'TRUE', CreatedAt: nowIso_(),
+      Role: role === 'admin' ? 'admin' : '', TempUntil: ''
     });
     return 'Organizer created: ' + name;
+  });
+}
+
+/**
+ * Editor-only, run once after updating: makes an existing organizer an administrator.
+ * Set Script property ADMIN_ORG_NAME, run this, then it is removed. There is no way to do this from the web.
+ */
+function makeAdminFromProperties() {
+  var props = PropertiesService.getScriptProperties();
+  var name = String(props.getProperty('ADMIN_ORG_NAME') || '').toLowerCase();
+  props.deleteProperty('ADMIN_ORG_NAME');
+  return withLock_(function () {
+    var o = readAll_('Organizers').filter(function (x) { return x.Name.toLowerCase() === name; })[0];
+    if (!o) throw new Error('Organizer not found.');
+    updateObj_('Organizers', o, { Role: 'admin', Active: 'TRUE' });
+    return o.Name + ' is now an administrator.';
   });
 }
 

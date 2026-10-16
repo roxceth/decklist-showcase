@@ -1,5 +1,13 @@
 # Technical changelog
 
+## 0.2.0
+- `Code.gs` `VERSION` 0.2.0. `Organizers` schema + `Role` ('admin'|''), `TempUntil` (ISO or ''). Blank values are read as organizer / no temp password, so old rows work before and after re-running `setup()` (it only rewrites headers).
+- Session record `{id, pv}` where `pv` = first 16 hex of the password hash; `requireSession_` re-reads the sheet on every call and compares `pv`, `Active`, `Role`, `TempUntil`. Password change/reset/disable therefore invalidates sessions with no cache enumeration. `dispatch_` blocks everything except `changePassword`, `logout`, `whoami` (`ALLOWED_WHILE_TEMP`) while a temp password is pending (`password_change_required`).
+- New actions: `whoami`, `changePassword` (current password required, shares the login lockout key, returns a new session), admin-only `listOrganizers`, `createOrganizer`, `resetOrganizerPassword`, `setOrganizerActive`, `setOrganizerRole` (`requireAdmin_`). Guards: no self reset/disable, last active admin protected, 50 organizers max, case-insensitive unique names. Temp password: 12 chars of a 31-symbol alphabet, rejection sampling over `Utilities.getUuid()` bytes, 72 h. Never logged or put in Audit.
+- Editor-only: `addOrganizer(name, password, role)`, `makeAdminFromProperties` (`ADMIN_ORG_NAME`).
+- Frontend: `views/team.js`, `views/password.js`; routes `#/team`, `#/password`; `session.js` stores `role` and `mustChange`; router redirects forced changes and non-admins; `api.js` handles `password_change_required`; Password link in the top bar; Team button on the dashboard for admins.
+- Tests: `qa/organizers.test.mjs` (18) and 5 e2e. `helpers.mjs` makes 'Hector D.' an admin. Total 111.
+
 ## 0.1.8
 - `ui.js`: `rankTone(n)` -> `r1|r2|r3|rn`; CSS vars `--rk-fill/--rk-ink/--rk-text` (`.r1 #e0b14a`, `.r2 #c9d1dd`, `.r3 #cf8a5c`, `.rn #2a3140`). Aplicado en `present.js` (`pres-rank`, `sl-rank`), `player.js`, `editEvent.js`, `newEvent.js`. Icono `refresh` en SVG; `refreshButton` usa `replaceChildren(icon, text)`.
 - `login.js`: se eliminan eyebrow y `.steps`; `sample()` (`.sample`, `aria-hidden`) con 4 `.mini-row`. CSS muerto `.eyebrow/.steps/.step` eliminado.

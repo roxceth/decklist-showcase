@@ -5,7 +5,7 @@ export const PW = 'correct horse battery';
 export function freshBackend() {
   const gas = createGas();
   gas.setupAll();
-  gas.run('addOrganizer', 'Hector D.', PW);
+  gas.run('addOrganizer', 'Hector D.', PW, 'admin');
   gas.run('addOrganizer', 'Organizer 2', 'another-long-pass');
   return gas;
 }

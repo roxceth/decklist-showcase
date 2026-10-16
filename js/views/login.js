@@ -17,7 +17,7 @@ function sample() {
 
 export function loginView(notice) {
   if (getOrganizer()) {
-    location.hash = '#/dashboard';
+    location.hash = getOrganizer().mustChange ? '#/password' : '#/dashboard';
     return;
   }
   const name = h('input', { class: 'input', id: 'org-name', type: 'text', autocomplete: 'username', maxlength: '60', required: true });
@@ -43,7 +43,7 @@ export function loginView(notice) {
     try {
       const r = await call('login', { name: name.value, password: pass.value });
       setOrganizer(r.token, r.organizer, r.expiresInSec);
-      location.hash = '#/dashboard';
+      location.hash = r.organizer.mustChange ? '#/password' : '#/dashboard';
     } catch (err) {
       msg.replaceChildren(errorBanner(err));
       setBusy(btn, false);

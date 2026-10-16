@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 — equipo de organizadores
+- **Pantalla Team (solo administradores):** crear organizadores desde la app, sin abrir Apps Script. Cada cuenta nueva recibe una contraseña temporal (se muestra una vez, vale 72 horas) con un mensaje listo para copiar. También: reset de contraseña, desactivar/activar y hacer o quitar administrador. Siempre queda al menos un administrador activo.
+- **Cambio de contraseña:** botón **Password** para cualquier organizador. Con una contraseña temporal, el sitio obliga a elegir la propia antes de entrar al panel.
+- **Seguridad:** el rol se verifica en el servidor en cada llamada; cambiar/resetear contraseña o desactivar a alguien cierra sus sesiones al instante; cambiar la contraseña también tiene bloqueo tras 5 intentos fallidos.
+- **Al actualizar:** pega el nuevo `Code.gs`, ejecuta `setup` otra vez, ejecuta `makeAdminFromProperties` con tu nombre y publica una nueva versión del despliegue (ver README). Si no marcas a un administrador, nadie podrá usar Team.
+
 ## 0.1.8 — login y colores por puesto
 - **Login rediseñado:** se quitaron la etiqueta de arriba y los tres pasos numerados. Ahora el login muestra un torneo de ejemplo (4 jugadores con puesto, récord y deck) para que se entienda de un vistazo qué hace la app.
 - **Colores por puesto:** 1.º dorado, 2.º plata, 3.º bronce y el resto neutro. Se ve igual en el listado de posiciones, en cada slide de la presentación, en la lista de nombres del jugador, en Editar torneo y en Crear torneo.

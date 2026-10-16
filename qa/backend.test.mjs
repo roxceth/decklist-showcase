@@ -32,7 +32,7 @@ const submit = (gas, eventId, playerId, extra = {}, secret = secretA) =>
 
 test('ping and GET health', () => {
   const { gas } = setup();
-  assert.equal(ok(gas.post({ action: 'ping' })).version, '0.1.0');
+  assert.equal(ok(gas.post({ action: 'ping' })).version, '0.2.0');
   assert.equal(gas.get().ok, true);
 });
 

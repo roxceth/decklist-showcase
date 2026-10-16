@@ -344,3 +344,16 @@ h1, h2, h3 { text-wrap: balance; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .pres-top h1.app { font-size: inherit; font-weight: 600; letter-spacing: inherit; }
+
+/* Team page and password */
+.reveal { border-color: var(--gold-dim); margin-bottom: 20px; }
+.temp-pass { font: 600 clamp(24px, 6vw, 34px)/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.06em; color: var(--gold); background: #0a0c10; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; user-select: all; overflow-wrap: anywhere; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
+.check input { width: 20px; height: 20px; }
+.team-list { display: flex; flex-direction: column; gap: 12px; }
+.team-ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); }
+.team-row { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--line); }
+.team-row:first-child { border-top: 0; }
+.team-row.off .team-who strong { color: var(--muted); }
+.team-who { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+.team-btns { display: flex; flex-wrap: wrap; gap: 8px; }

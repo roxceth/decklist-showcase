@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "sync": "node qa/sync-parsers.mjs",
-    "test:backend": "node --test qa/backend.test.mjs qa/parsers.test.mjs qa/unit.test.mjs",
+    "test:backend": "node --test qa/backend.test.mjs qa/organizers.test.mjs qa/parsers.test.mjs qa/unit.test.mjs",
     "test:e2e": "node --test qa/e2e.test.mjs",
     "test": "node qa/sync-parsers.mjs --check && node --test qa/*.test.mjs",
     "dev": "node qa/dev-server.mjs",

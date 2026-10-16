@@ -1,4 +1,4 @@
-import { getToken, clearOrganizer } from './session.js';
+import { getToken, getOrganizer, setOrganizer, clearOrganizer } from './session.js';
 
 export class ApiError extends Error {
   constructor(code, message) {
@@ -56,6 +56,11 @@ export async function call(action, body = {}, opts = {}) {
     if (err.code === 'unauthorized' && opts.auth) {
       clearOrganizer();
       onUnauthorized();
+    }
+    if (err.code === 'password_change_required' && opts.auth) {
+      const me = getOrganizer();
+      if (me) setOrganizer(me.token, Object.assign({}, me, { mustChange: true }), Math.round((me.exp - Date.now()) / 1000) + 60);
+      location.hash = '#/password';
     }
     throw new ApiError(err.code, err.message);
   }

@@ -1,4 +1,4 @@
-# Guía de usuario — Decklist Showcase v0.1
+# Guía de usuario — Decklist Showcase v0.2
 
 ## Para el organizador
 
@@ -56,7 +56,16 @@ Los botones se ocultan solos en pantalla completa si no mueves el mouse. Las im�
 
 Las listas enviadas como **link de Exburst** no se pueden mostrar dentro de la página: aparece un botón *Open on Exburst* que abre la lista en otra pestaña.
 
-### 6. Borrar
+### 6. Equipo: agregar organizadores (solo administradores)
+1. En el panel pulsa **Team**.
+2. Escribe el nombre con el que la persona entrará y pulsa **Add organizer** (marca *Administrator* solo si también debe manejar el equipo).
+3. Aparece una **contraseña temporal**. Pulsa **Copy message** y envíasela en privado. Se ve una sola vez y vale 72 horas.
+4. La persona entra con esa contraseña y el sitio le pide elegir la suya.
+5. En la lista puedes **Reset password** (si la olvidó o venció), **Disable/Enable** y **Make admin/Remove admin**.
+
+Para cambiar tu propia contraseña usa el botón **Password** de la barra de arriba.
+
+### 7. Borrar
 Los torneos se borran solos al vencer. *Delete now* los borra de inmediato junto con sus listas y fotos (no se puede deshacer).
 
 ## Para los jugadores (texto que puedes pegar en el grupo)

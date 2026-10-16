@@ -56,7 +56,7 @@ async function login(page, name = 'Hector D.', pass = PW) {
 
 before(async () => {
   srv = await startDevServer();
-  srv.gas.run('addOrganizer', 'Hector D.', PW);
+  srv.gas.run('addOrganizer', 'Hector D.', PW, 'admin');
   srv.gas.run('addOrganizer', 'Organizer 2', 'another-long-pass');
   browser = await chromium.launch();
   // Fixture: an image that looks like an Exburst export (1080 x 1170 PNG), rendered by the browser itself.
@@ -910,6 +910,135 @@ test('home-screen install: manifest and touch icons are valid and reachable', as
   const t = await (await page.request.get(srv.base + '/' + links.touch)).body();
   assert.equal(t.readUInt32BE(16), 180); assert.equal(t.readUInt32BE(20), 180);
   await page.context().close();
+});
+
+test('team: administrators see Team; plain organizers do not and are sent away from #/team', async () => {
+  const plain = await newPage();
+  await login(plain, 'Organizer 2', 'another-long-pass');
+  assert.equal(await plain.getByRole('link', { name: 'Team' }).count(), 0);
+  await plain.goto(srv.base + '/#/team');
+  await plain.getByRole('heading', { name: 'Your tournaments' }).waitFor();
+  assert.equal(plain.url().endsWith('#/dashboard'), true);
+  await plain.context().close();
+  const admin = await newPage();
+  await login(admin);
+  await admin.getByRole('link', { name: 'Team' }).click();
+  await admin.getByRole('heading', { name: 'Team', level: 1 }).waitFor();
+  await admin.context().close();
+});
+
+test('team: create an organizer, first sign-in forces a new password, then everything works', async () => {
+  const admin = await newPage({ viewport: { width: 1280, height: 900 } });
+  await login(admin);
+  await admin.goto(srv.base + '/#/team');
+  await admin.getByRole('heading', { name: 'Team', level: 1 }).waitFor();
+  await admin.getByLabel('Name').fill('=bad');
+  await admin.getByRole('button', { name: 'Add organizer' }).click();
+  await admin.getByRole('alert').waitFor();
+  await admin.getByLabel('Name').fill('Kenji Sato');
+  await admin.getByRole('button', { name: 'Add organizer' }).click();
+  const temp = (await admin.locator('.temp-pass').textContent()).trim();
+  assert.match(temp, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+  await admin.getByRole('heading', { name: 'Account created for Kenji Sato' }).waitFor();
+  await admin.getByText('Has not signed in yet').waitFor();
+  await shot(admin, '13-team-desktop');
+  await admin.getByLabel('Name').fill('kenji sato');
+  await admin.getByRole('button', { name: 'Add organizer' }).click();
+  await admin.getByText('Someone already uses that name.').waitFor();
+  await admin.context().close();
+
+  const k = await newPage({ viewport: { width: 1280, height: 900 } });
+  await k.goto(srv.base + '/#/');
+  await k.getByLabel('Name').fill('Kenji Sato');
+  await k.getByLabel('Password').fill(temp);
+  await k.getByRole('button', { name: 'Sign in' }).click();
+  await k.getByRole('heading', { name: 'Choose your own password' }).waitFor();
+  assert.equal(await k.getByRole('link', { name: 'Password' }).count(), 0, 'no distractions while forced');
+  await k.goto(srv.base + '/#/dashboard'); // trying to skip the step
+  await k.getByRole('heading', { name: 'Choose your own password' }).waitFor();
+  await k.goto(srv.base + '/#/team');
+  await k.getByRole('heading', { name: 'Choose your own password' }).waitFor();
+  await shot(k, '14-password-first-signin');
+  await k.getByLabel('Temporary password').fill(temp);
+  await k.getByLabel('New password', { exact: true }).fill('my-own-password');
+  await k.getByLabel('Repeat new password').fill('different-password');
+  await k.getByRole('button', { name: 'Save and continue' }).click();
+  await k.getByText('The two new passwords are not the same.').waitFor();
+  await k.getByLabel('Repeat new password').fill('my-own-password');
+  await k.getByRole('button', { name: 'Save and continue' }).click();
+  await k.getByRole('heading', { name: 'Your tournaments' }).waitFor();
+  assert.equal(await k.getByRole('link', { name: 'Team' }).count(), 0, 'new organizers are not admins');
+  await k.reload();
+  await k.getByRole('heading', { name: 'Your tournaments' }).waitFor();
+  await k.getByRole('button', { name: 'Sign out' }).click();
+  await k.getByRole('button', { name: 'Sign in' }).waitFor();
+  await login(k, 'Kenji Sato', 'my-own-password');
+  await k.context().close();
+});
+
+test('password page (voluntary): wrong current password is explained; a good change keeps you signed in', async () => {
+  const page = await newPage();
+  await login(page, 'Organizer 2', 'another-long-pass');
+  await page.getByRole('link', { name: 'Password' }).click();
+  await page.getByRole('heading', { name: 'Change password' }).first().waitFor();
+  await page.getByLabel('Current password').fill('not-the-password');
+  await page.getByLabel('New password', { exact: true }).fill('fresh-long-password');
+  await page.getByLabel('Repeat new password').fill('fresh-long-password');
+  await page.getByRole('button', { name: 'Change password' }).click();
+  await page.getByText('The current password is not right.').waitFor();
+  await page.getByLabel('Current password').fill('another-long-pass');
+  await page.getByRole('button', { name: 'Change password' }).click();
+  await page.getByRole('heading', { name: 'Your tournaments' }).waitFor();
+  await page.reload();
+  await page.getByRole('heading', { name: 'Your tournaments' }).waitFor();
+  await page.context().close();
+  srv.gas.run('addOrganizer', 'Organizer 2', 'another-long-pass'); // restore for later tests
+});
+
+test('team: reset, disable and enable work from the page and take effect for the other person', async () => {
+  const admin = await newPage({ viewport: { width: 1280, height: 900 } });
+  await login(admin);
+  const who = await newPage();
+  await login(who, 'Organizer 2', 'another-long-pass');
+  await admin.goto(srv.base + '/#/team');
+  await admin.getByRole('heading', { name: 'Team', level: 1 }).waitFor();
+  await admin.getByRole('button', { name: 'Disable Organizer 2' }).click();
+  await admin.getByRole('button', { name: 'Disable', exact: true }).last().click();
+  await admin.getByText('Disabled', { exact: true }).waitFor();
+  await who.reload();
+  await who.getByRole('button', { name: 'Sign in' }).waitFor(); // session ended at once
+  await admin.getByRole('button', { name: 'Enable Organizer 2' }).click();
+  await admin.getByRole('button', { name: 'Enable', exact: true }).last().click();
+  await admin.getByRole('button', { name: 'Disable Organizer 2' }).waitFor();
+  await admin.getByRole('button', { name: 'Reset password for Organizer 2' }).click();
+  await admin.getByRole('button', { name: 'Reset password', exact: true }).last().click();
+  await admin.getByRole('heading', { name: 'New temporary password for Organizer 2' }).waitFor();
+  const temp = (await admin.locator('.temp-pass').textContent()).trim();
+  await admin.getByRole('button', { name: 'Done' }).click();
+  assert.equal(await admin.locator('.temp-pass').count(), 0);
+  assert.equal(await admin.getByRole('button', { name: 'Reset password for Hector D.' }).count(), 0, 'no self-reset or self-disable buttons');
+  assert.equal(await admin.getByRole('button', { name: 'Disable Hector D.' }).count(), 0);
+  await who.getByLabel('Name').fill('Organizer 2');
+  await who.getByLabel('Password').fill(temp);
+  await who.getByRole('button', { name: 'Sign in' }).click();
+  await who.getByRole('heading', { name: 'Choose your own password' }).waitFor();
+  await who.context().close();
+  await admin.context().close();
+  srv.gas.run('addOrganizer', 'Organizer 2', 'another-long-pass');
+});
+
+test('team and password pages fit a phone screen', async () => {
+  const m = await newPage(MOBILE);
+  await login(m);
+  await noHorizontalOverflow(m, 'dashboard (admin) mobile');
+  await m.goto(srv.base + '/#/team');
+  await m.getByRole('heading', { name: 'Team', level: 1 }).waitFor();
+  await noHorizontalOverflow(m, 'team mobile');
+  await shot(m, '13-team-mobile');
+  await m.goto(srv.base + '/#/password');
+  await m.getByRole('heading', { name: 'Change password' }).first().waitFor();
+  await noHorizontalOverflow(m, 'password mobile');
+  await m.context().close();
 });
 
 test('no unexpected console errors during the whole run', () => {

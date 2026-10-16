@@ -6,6 +6,8 @@ import { dashboardView } from './views/dashboard.js';
 import { newEventView } from './views/newEvent.js';
 import { editEventView } from './views/editEvent.js';
 import { playerView } from './views/player.js';
+import { passwordView } from './views/password.js';
+import { teamView } from './views/team.js';
 import { presentView } from './views/present.js';
 import { brand } from './views/layout.js';
 
@@ -26,7 +28,7 @@ function notFound() {
       h('a', { class: 'btn', href: '#/' }, 'Home'))));
 }
 
-const ORG_ROUTES = new Set(['dashboard', 'new', 'edit', 'present']);
+const ORG_ROUTES = new Set(['dashboard', 'new', 'edit', 'present', 'password', 'team']);
 
 function route() {
   runLeave();
@@ -38,6 +40,16 @@ function route() {
     location.hash = '#/';
     return;
   }
+  const me = getOrganizer();
+  // A temporary password must be replaced before anything else; only administrators see the team page.
+  if (me && me.mustChange && ORG_ROUTES.has(name) && name !== 'password') {
+    location.hash = '#/password';
+    return;
+  }
+  if (name === 'team' && me && me.role !== 'admin') {
+    location.hash = '#/dashboard';
+    return;
+  }
   const needsId = name === 'edit' || name === 'present' || name === 'e';
   if (needsId && !/^[a-f0-9]{6,32}$/.test(id)) return notFound();
   switch (name) {
@@ -46,6 +58,8 @@ function route() {
     case 'new': return newEventView();
     case 'edit': return editEventView(id);
     case 'present': return presentView(id);
+    case 'password': return passwordView();
+    case 'team': return teamView();
     case 'e': return playerView(id);
     default: return notFound();
   }

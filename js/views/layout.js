@@ -27,8 +27,9 @@ export function organizerShell(...pageChildren) {
     h('header', { class: 'topbar' },
       brand('#/dashboard'),
       h('div', { class: 'topbar-right' },
-        o ? capyLeagueLink() : null,
+        o && !o.mustChange ? capyLeagueLink() : null,
         o ? h('span', { class: 'who' }, 'Signed in as ', h('strong', { text: o.name })) : null,
+        o && !o.mustChange ? h('a', { class: 'btn small', href: '#/password' }, 'Password') : null,
         o ? signOut : null)),
     h('main', { class: 'page' }, ...pageChildren));
 }

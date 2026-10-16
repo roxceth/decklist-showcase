@@ -35,7 +35,7 @@ export function getOrganizer() {
   }
 }
 export function setOrganizer(token, organizer, expiresInSec) {
-  write(ORG, JSON.stringify({ token, id: organizer.id, name: organizer.name, exp: Date.now() + (expiresInSec - 60) * 1000 }));
+  write(ORG, JSON.stringify({ token, id: organizer.id, name: organizer.name, role: organizer.role === 'admin' ? 'admin' : 'organizer', mustChange: organizer.mustChange === true, exp: Date.now() + (expiresInSec - 60) * 1000 }));
 }
 export function clearOrganizer() {
   remove(ORG);
